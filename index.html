@@ -3,39 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Vendas Pro</title>
+    <title>Sistema de Vendas Pro v3</title>
     <style>
         :root { --primary: #2563eb; --success: #10b981; --danger: #ef4444; --warning: #f59e0b; --bg: #f3f4f6; --text: #1f2937; }
         body { font-family: 'Segoe UI', system-ui, sans-serif; margin: 0; background-color: var(--bg); color: var(--text); }
         
-        /* Layout */
         header { background: var(--primary); color: white; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; }
         nav button { background: none; border: none; color: white; font-size: 0.9rem; cursor: pointer; margin-left: 0.5rem; padding: 0.6rem 1rem; border-radius: 6px; transition: 0.2s; }
         nav button:hover { background: rgba(255,255,255,0.15); }
+        
         .container { padding: 1.5rem; max-width: 1300px; margin: 0 auto; }
         .page { display: none; }
         .page.active { display: block; }
         
-        /* Dashboard Cards */
         .dash-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
         .dash-card { background: white; padding: 1.5rem; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border-left: 5px solid var(--primary); }
         .dash-card h4 { margin: 0; font-size: 0.8rem; color: #6b7280; text-transform: uppercase; }
         .dash-card .value { font-size: 1.5rem; font-weight: bold; margin-top: 0.5rem; display: block; }
 
-        /* UI Elements */
         .card { background: white; padding: 1.5rem; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 1rem; }
         .form-row { display: flex; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap; }
         .form-group { flex: 1; display: flex; flex-direction: column; min-width: 180px; }
         label { margin-bottom: 0.4rem; font-weight: 600; font-size: 0.85rem; }
         input, select { padding: 0.6rem; border: 1px solid #d1d5db; border-radius: 6px; outline: none; }
-        input:focus { border-color: var(--primary); }
         
         button.btn { padding: 0.6rem 1.2rem; border-radius: 6px; border: none; cursor: pointer; font-weight: 600; transition: 0.2s; display: inline-flex; align-items: center; gap: 5px; }
         .btn-primary { background: var(--primary); color: white; }
         .btn-success { background: var(--success); color: white; }
         .btn-danger { background: var(--danger); color: white; }
         .btn-ghost { background: #e5e7eb; color: var(--text); }
-        .btn:hover { opacity: 0.9; transform: translateY(-1px); }
+        .btn-outline { border: 1px solid var(--primary); color: var(--primary); background: transparent; }
+        .btn-outline.active { background: var(--primary); color: white; }
 
         table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; }
         th, td { padding: 0.9rem; text-align: left; border-bottom: 1px solid #f3f4f6; font-size: 0.9rem; }
@@ -44,19 +42,15 @@
         .badge-success { background: #d1fae5; color: #065f46; }
         .badge-danger { background: #fee2e2; color: #991b1b; }
 
-        /* Modal */
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); justify-content: center; align-items: center; z-index: 1000; }
         .modal { background: white; padding: 2rem; border-radius: 12px; width: 95%; max-width: 900px; max-height: 90vh; overflow-y: auto; }
         
-        /* Estilo de Impressão */
         @media print {
             body * { visibility: hidden; }
             #receipt-print, #receipt-print * { visibility: visible; }
             #receipt-print { position: absolute; left: 0; top: 0; width: 80mm; padding: 5mm; color: black; }
-            .no-print { display: none !important; }
         }
-
-        #receipt-print { display: none; font-family: 'Courier New', Courier, monospace; font-size: 12px; }
+        #receipt-print { display: none; font-family: 'Courier New', monospace; font-size: 12px; }
         .hidden { display: none !important; }
     </style>
 </head>
@@ -75,31 +69,25 @@
     <div class="container no-print">
         
         <div id="dash-summary" class="dash-grid">
-            <div class="dash-card">
-                <h4>Vendas Hoje</h4>
-                <span class="value" id="dash-hoje">R$ 0,00</span>
-            </div>
-            <div class="dash-card" style="border-left-color: var(--success)">
-                <h4>Faturamento Mês</h4>
-                <span class="value" id="dash-mes">R$ 0,00</span>
-            </div>
-            <div class="dash-card" style="border-left-color: var(--warning)">
-                <h4>Total Pendente (Fiado)</h4>
-                <span class="value" id="dash-pendente">R$ 0,00</span>
-            </div>
+            <div class="dash-card"><h4>Vendas Hoje</h4><span class="value" id="dash-hoje">R$ 0,00</span></div>
+            <div class="dash-card" style="border-left-color: var(--success)"><h4>Faturamento Mês</h4><span class="value" id="dash-mes">R$ 0,00</span></div>
+            <div class="dash-card" style="border-left-color: var(--warning)"><h4>Pendente (Prazo)</h4><span class="value" id="dash-pendente">R$ 0,00</span></div>
         </div>
 
         <section id="home" class="page active">
             <div class="card">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-                    <h3 style="margin:0">Histórico de Vendas</h3>
-                    <button class="btn btn-success" onclick="openSaleModal()">+ Nova Venda (F1)</button>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 10px;">
+                    <h3 style="margin:0">Vendas</h3>
+                    <div style="display:flex; gap: 10px;">
+                        <button id="btn-toggle-canceladas" class="btn btn-outline" onclick="toggleCanceladas()">Ver Canceladas</button>
+                        <button class="btn btn-success" onclick="openSaleModal()">+ Nova Venda (F1)</button>
+                    </div>
                 </div>
                 
                 <div class="form-row">
                     <div class="form-group"><label>De:</label><input type="date" id="f-inicio" onchange="renderSales()"></div>
                     <div class="form-group"><label>Até:</label><input type="date" id="f-fim" onchange="renderSales()"></div>
-                    <div class="form-group"><label>Cliente/Nº Venda:</label><input type="text" id="f-busca" placeholder="Pesquisar..." onkeyup="renderSales()"></div>
+                    <div class="form-group"><label>Pesquisar:</label><input type="text" id="f-busca" placeholder="Cliente ou Nº" onkeyup="renderSales()"></div>
                 </div>
 
                 <div style="overflow-x: auto;">
@@ -127,26 +115,13 @@
                 <form id="form-produto" onsubmit="saveProduct(event)">
                     <div class="form-row">
                         <div class="form-group"><label>Nome do Produto</label><input type="text" id="p-nome" required></div>
-                        <div class="form-group">
-                            <label>Unidade de Medida</label>
-                            <select id="p-unidade">
-                                <option value="Unid">Unidade (Unid)</option>
-                                <option value="Cx">Caixa (Cx)</option>
-                                <option value="Kg">Quilo (Kg)</option>
-                                <option value="Pct">Pacote (Pct)</option>
-                            </select>
-                        </div>
+                        <div class="form-group"><label>Medida</label><select id="p-unidade"><option value="Unid">Unidade</option><option value="Cx">Caixa</option></select></div>
                         <div class="form-group"><label>Preço Sugerido</label><input type="number" step="0.01" id="p-preco"></div>
                         <div class="form-group" style="justify-content: flex-end;"><button type="submit" class="btn btn-primary">Salvar Produto</button></div>
                     </div>
                 </form>
             </div>
-            <div class="card">
-                <table>
-                    <thead><tr><th>Código</th><th>Produto</th><th>Medida</th><th>Preço</th><th>Ações</th></tr></thead>
-                    <tbody id="prod-table-body"></tbody>
-                </table>
-            </div>
+            <div class="card"><table><thead><tr><th>Código</th><th>Produto</th><th>Medida</th><th>Preço</th><th>Ações</th></tr></thead><tbody id="prod-table-body"></tbody></table></div>
         </section>
 
         <section id="clientes" class="page">
@@ -156,26 +131,29 @@
                     <input type="hidden" id="c-id-edit">
                     <div class="form-row">
                         <div class="form-group"><label>Nome Completo</label><input type="text" id="c-nome" required></div>
-                        <div class="form-group"><label>Prazo Padrão (Dias)</label><input type="number" id="c-prazo" value="30"></div>
-                        <div class="form-group" style="justify-content: flex-end;">
-                            <button type="submit" class="btn btn-primary" id="btn-cli-save">Cadastrar Cliente</button>
-                        </div>
+                        <div class="form-group"><label>Prazo (Dias)</label><input type="number" id="c-prazo" value="30"></div>
+                        <div class="form-group" style="justify-content: flex-end;"><button type="submit" class="btn btn-primary" id="btn-cli-save">Salvar Cliente</button></div>
                     </div>
                 </form>
             </div>
-            <div class="card">
-                <table>
-                    <thead><tr><th>Código</th><th>Nome</th><th>Prazo</th><th>Ações</th></tr></thead>
-                    <tbody id="cli-table-body"></tbody>
-                </table>
-            </div>
+            <div class="card"><table><thead><tr><th>Código</th><th>Nome</th><th>Prazo</th><th>Ações</th></tr></thead><tbody id="cli-table-body"></tbody></table></div>
         </section>
 
         <section id="acerto" class="page">
             <div class="card">
-                <h3>Contas a Receber (Prazo)</h3>
+                <h3>Acerto de Contas (Vendas a Prazo)</h3>
+                <p style="font-size: 0.85rem; color: #666;">Aqui aparecem as vendas "Prazo em Carteira". Escolha como o cliente está pagando antes de confirmar.</p>
                 <table>
-                    <thead><tr><th>Venda</th><th>Cliente</th><th>Vencimento</th><th>Valor</th><th>Status</th><th>Ação</th></tr></thead>
+                    <thead>
+                        <tr>
+                            <th>Venda</th>
+                            <th>Cliente</th>
+                            <th>Vencimento</th>
+                            <th>Valor</th>
+                            <th>Método de Acerto</th>
+                            <th>Ação</th>
+                        </tr>
+                    </thead>
                     <tbody id="acerto-table-body"></tbody>
                 </table>
             </div>
@@ -185,57 +163,33 @@
     <div class="modal-overlay" id="modal-venda">
         <div class="modal">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem">
-                <h2 style="margin:0">Finalizar Venda</h2>
+                <h2 style="margin:0">Nova Venda</h2>
                 <button onclick="closeSaleModal()" style="font-size:1.5rem; border:none; background:none; cursor:pointer">&times;</button>
             </div>
             <form id="form-venda" onsubmit="executeSale(event)">
                 <div class="form-row">
                     <div class="form-group"><label>Vendedor</label><input type="text" id="v-vendedor" required></div>
-                    <div class="form-group">
-                        <label>Tipo</label>
-                        <select id="v-tipo"><option value="Venda">Venda</option><option value="Reposição">Reposição</option></select>
-                    </div>
-                    <div class="form-group">
-                        <label>Cliente</label>
-                        <select id="v-cliente" required onchange="updateClientInfo()"></select>
-                    </div>
+                    <div class="form-group"><label>Tipo</label><select id="v-tipo"><option value="Venda">Venda</option><option value="Reposição">Reposição</option></select></div>
+                    <div class="form-group"><label>Cliente</label><select id="v-cliente" required></select></div>
                 </div>
-
                 <div style="background:#f8fafc; padding:1rem; border-radius:8px; margin:1rem 0">
                     <div class="form-row">
-                        <div class="form-group" style="flex:2">
-                            <label>Produto</label>
-                            <select id="v-prod-select" onchange="autoFillProduct()">
-                                <option value="">Selecione um produto...</option>
-                            </select>
-                        </div>
+                        <div class="form-group" style="flex:2"><label>Produto</label><select id="v-prod-select" onchange="autoFillProduct()" required></select></div>
                         <div class="form-group"><label>Qtd</label><input type="number" id="v-qtd" value="1" min="1" oninput="calcSaleTotal()"></div>
                         <div class="form-group"><label>Unitário R$</label><input type="number" step="0.01" id="v-unit" oninput="calcSaleTotal()"></div>
                     </div>
                 </div>
-
                 <div class="form-row">
-                    <div class="form-group"><label>Acréscimo R$ (+)</label><input type="number" step="0.01" id="v-acres" value="0" oninput="calcSaleTotal()"></div>
-                    <div class="form-group"><label>Desconto R$ (-)</label><input type="number" step="0.01" id="v-desc" value="0" oninput="calcSaleTotal()"></div>
-                    <div class="form-group">
-                        <label>Pagamento</label>
-                        <select id="v-pgto" onchange="toggleCheque()">
-                            <option value="Dinheiro">Dinheiro</option>
-                            <option value="PIX">PIX</option>
-                            <option value="Cartão">Cartão</option>
-                            <option value="Prazo em Carteira">Prazo em Carteira</option>
-                            <option value="Cheque">Cheque</option>
-                        </select>
-                    </div>
+                    <div class="form-group"><label>Acréscimo R$</label><input type="number" step="0.01" id="v-acres" value="0" oninput="calcSaleTotal()"></div>
+                    <div class="form-group"><label>Desconto R$</label><input type="number" step="0.01" id="v-desc" value="0" oninput="calcSaleTotal()"></div>
+                    <div class="form-group"><label>Pagamento</label><select id="v-pgto" onchange="toggleCheque()">
+                        <option value="Dinheiro">Dinheiro</option><option value="PIX">PIX</option><option value="Cartão">Cartão</option><option value="Prazo em Carteira">Prazo em Carteira</option><option value="Cheque">Cheque</option>
+                    </select></div>
                 </div>
-
-                <div id="div-cheque" class="hidden">
-                    <div class="form-group" style="margin-bottom:1rem"><label>Dados do Cheque</label><input type="text" id="v-cheque-info" placeholder="Banco, Nº, Nome..."></div>
-                </div>
-
+                <div id="div-cheque" class="hidden"><input type="text" id="v-cheque-info" placeholder="Info do Cheque"></div>
                 <div style="display:flex; justify-content:space-between; align-items:center; background:#1e293b; color:white; padding:1.5rem; border-radius:8px">
-                    <div><span style="font-size:0.9rem; opacity:0.8">TOTAL A PAGAR</span><br><b style="font-size:1.8rem">R$ <span id="v-total-txt">0,00</span></b></div>
-                    <button type="submit" class="btn btn-success" style="padding:1rem 2rem; font-size:1.1rem">FINALIZAR VENDA</button>
+                    <div><span style="font-size:0.9rem; opacity:0.8">TOTAL</span><br><b style="font-size:1.8rem">R$ <span id="v-total-txt">0,00</span></b></div>
+                    <button type="submit" class="btn btn-success">FINALIZAR</button>
                 </div>
             </form>
         </div>
@@ -244,11 +198,11 @@
     <div id="receipt-print"></div>
 
     <script>
-        // Banco de Dados Local
-        let db = {
-            clientes: JSON.parse(localStorage.getItem('db_clientes')) || [],
-            produtos: JSON.parse(localStorage.getItem('db_produtos')) || [],
-            vendas: JSON.parse(localStorage.getItem('db_vendas')) || []
+        let verCanceladasGlobal = false;
+        let db = { 
+            clientes: JSON.parse(localStorage.getItem('db_clientes')) || [], 
+            produtos: JSON.parse(localStorage.getItem('db_produtos')) || [], 
+            vendas: JSON.parse(localStorage.getItem('db_vendas')) || [] 
         };
 
         function saveDB() {
@@ -258,7 +212,6 @@
             updateDashboard();
         }
 
-        // Navegação
         function navigate(page) {
             document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
             document.getElementById(page).classList.add('active');
@@ -268,196 +221,21 @@
             if(page === 'acerto') renderAcerto();
         }
 
-        // --- GESTÃO DE PRODUTOS ---
-        function saveProduct(e) {
-            e.preventDefault();
-            const prod = {
-                id: db.produtos.length > 0 ? Math.max(...db.produtos.map(p => p.id)) + 1 : 101,
-                nome: document.getElementById('p-nome').value,
-                unidade: document.getElementById('p-unidade').value,
-                preco: parseFloat(document.getElementById('p-preco').value) || 0
-            };
-            db.produtos.push(prod);
-            saveDB();
-            renderProducts();
-            e.target.reset();
-        }
-
-        function renderProducts() {
-            const tbody = document.getElementById('prod-table-body');
-            tbody.innerHTML = db.produtos.map(p => `
-                <tr>
-                    <td>#${p.id}</td>
-                    <td>${p.nome}</td>
-                    <td>${p.unidade}</td>
-                    <td>R$ ${p.preco.toFixed(2)}</td>
-                    <td><button class="btn btn-danger" onclick="deleteProd(${p.id})" style="padding:4px 8px">Excluir</button></td>
-                </tr>
-            `).join('');
-            
-            // Atualiza select de produtos na venda
-            const vSelect = document.getElementById('v-prod-select');
-            vSelect.innerHTML = '<option value="">Selecione um produto...</option>' + 
-                db.produtos.map(p => `<option value="${p.id}">${p.nome} (${p.unidade})</option>`).join('');
-        }
-
-        function deleteProd(id) {
-            if(confirm('Excluir produto?')) {
-                db.produtos = db.produtos.filter(p => p.id !== id);
-                saveDB();
-                renderProducts();
-            }
-        }
-
-        // --- GESTÃO DE CLIENTES ---
-        function saveClient(e) {
-            e.preventDefault();
-            const idEdit = document.getElementById('c-id-edit').value;
-            const nome = document.getElementById('c-nome').value;
-            const prazo = parseInt(document.getElementById('c-prazo').value);
-
-            if(idEdit) {
-                const idx = db.clientes.findIndex(c => c.id == idEdit);
-                db.clientes[idx] = { ...db.clientes[idx], nome, prazo };
+        // --- FILTRO DE CANCELADAS ---
+        function toggleCanceladas() {
+            verCanceladasGlobal = !verCanceladasGlobal;
+            const btn = document.getElementById('btn-toggle-canceladas');
+            if(verCanceladasGlobal) {
+                btn.innerText = "Ver Apenas Ativas";
+                btn.classList.add('active');
             } else {
-                const client = {
-                    id: db.clientes.length > 0 ? Math.max(...db.clientes.map(c => c.id)) + 1 : 1001,
-                    nome, prazo
-                };
-                db.clientes.push(client);
+                btn.innerText = "Ver Canceladas";
+                btn.classList.remove('active');
             }
-            
-            saveDB();
-            renderClients();
-            document.getElementById('form-cliente').reset();
-            document.getElementById('c-id-edit').value = '';
-            document.getElementById('btn-cli-save').innerText = 'Cadastrar Cliente';
-        }
-
-        function editClient(id) {
-            const c = db.clientes.find(c => c.id === id);
-            document.getElementById('c-id-edit').value = c.id;
-            document.getElementById('c-nome').value = c.nome;
-            document.getElementById('c-prazo').value = c.prazo;
-            document.getElementById('btn-cli-save').innerText = 'Atualizar Cliente';
-            window.scrollTo(0,0);
-        }
-
-        function deleteClient(id) {
-            if(confirm('Excluir cliente permanentemente?')) {
-                db.clientes = db.clientes.filter(c => c.id !== id);
-                saveDB();
-                renderClients();
-            }
-        }
-
-        function renderClients() {
-            const tbody = document.getElementById('cli-table-body');
-            tbody.innerHTML = db.clientes.map(c => `
-                <tr>
-                    <td>#${c.id}</td>
-                    <td>${c.nome}</td>
-                    <td>${c.prazo} dias</td>
-                    <td>
-                        <button class="btn btn-ghost" onclick="editClient(${c.id})" style="padding:4px 8px">Editar</button>
-                        <button class="btn btn-danger" onclick="deleteClient(${c.id})" style="padding:4px 8px">Excluir</button>
-                    </td>
-                </tr>
-            `).join('');
-            
-            const vCli = document.getElementById('v-cliente');
-            vCli.innerHTML = '<option value="">Selecione...</option>' + 
-                db.clientes.map(c => `<option value="${c.id}">${c.nome}</option>`).join('');
-        }
-
-        // --- LÓGICA DE VENDA ---
-        function openSaleModal() {
-            if(db.produtos.length === 0) return alert('Cadastre produtos primeiro!');
-            document.getElementById('modal-venda').style.display = 'flex';
-        }
-
-        function closeSaleModal() { document.getElementById('modal-venda').style.display = 'none'; }
-
-        function autoFillProduct() {
-            const id = document.getElementById('v-prod-select').value;
-            const p = db.produtos.find(p => p.id == id);
-            if(p) {
-                document.getElementById('v-unit').value = p.preco;
-                calcSaleTotal();
-            }
-        }
-
-        function calcSaleTotal() {
-            const qtd = parseFloat(document.getElementById('v-qtd').value) || 0;
-            const unit = parseFloat(document.getElementById('v-unit').value) || 0;
-            const acres = parseFloat(document.getElementById('v-acres').value) || 0;
-            const desc = parseFloat(document.getElementById('v-desc').value) || 0;
-            const total = (qtd * unit) + acres - desc;
-            document.getElementById('v-total-txt').innerText = total.toFixed(2);
-            return total;
-        }
-
-        function toggleCheque() {
-            document.getElementById('div-cheque').classList.toggle('hidden', document.getElementById('v-pgto').value !== 'Cheque');
-        }
-
-        function executeSale(e) {
-            e.preventDefault();
-            const cliId = document.getElementById('v-cliente').value;
-            const cliente = db.clientes.find(c => c.id == cliId);
-            const pgto = document.getElementById('v-pgto').value;
-            const total = calcSaleTotal();
-            
-            let vencimento = null;
-            if(pgto === 'Prazo em Carteira') {
-                let d = new Date();
-                d.setDate(d.getDate() + (cliente.prazo || 0));
-                vencimento = d.toISOString().split('T')[0];
-            }
-
-            const venda = {
-                id: db.vendas.length > 0 ? Math.max(...db.vendas.map(v => v.id)) + 1 : 5000,
-                data: new Date().toISOString(),
-                vendedor: document.getElementById('v-vendedor').value,
-                cliente: cliente.nome,
-                clienteId: cliente.id,
-                total: total,
-                pagamento: pgto,
-                vencimento: vencimento,
-                status: 'Ativa',
-                itens: document.getElementById('v-prod-select').options[document.getElementById('v-prod-select').selectedIndex].text + " x" + document.getElementById('v-qtd').value
-            };
-
-            db.vendas.push(venda);
-            saveDB();
-            closeSaleModal();
             renderSales();
-            if(confirm('Venda realizada! Deseja imprimir o recibo?')) printReceipt(venda.id);
         }
 
-        function cancelSale(id) {
-            if(confirm('Deseja realmente CANCELAR esta venda?')) {
-                const v = db.vendas.find(v => v.id === id);
-                v.status = 'Cancelada';
-                saveDB();
-                renderSales();
-            }
-        }
-
-        // --- DASHBOARD E LISTAGEM ---
-        function updateDashboard() {
-            const hoje = new Date().toISOString().split('T')[0];
-            const mesAtual = hoje.substring(0, 7);
-
-            const totalHoje = db.vendas.filter(v => v.data.startsWith(hoje) && v.status === 'Ativa').reduce((acc, v) => acc + v.total, 0);
-            const totalMes = db.vendas.filter(v => v.data.startsWith(mesAtual) && v.status === 'Ativa').reduce((acc, v) => acc + v.total, 0);
-            const pendente = db.vendas.filter(v => v.pagamento === 'Prazo em Carteira' && v.status === 'Ativa').reduce((acc, v) => acc + v.total, 0);
-
-            document.getElementById('dash-hoje').innerText = `R$ ${totalHoje.toFixed(2)}`;
-            document.getElementById('dash-mes').innerText = `R$ ${totalMes.toFixed(2)}`;
-            document.getElementById('dash-pendente').innerText = `R$ ${pendente.toFixed(2)}`;
-        }
-
+        // --- RENDERIZAR VENDAS (MUDANÇA NO FILTRO) ---
         function renderSales() {
             const tbody = document.getElementById('sales-table-body');
             const busca = document.getElementById('f-busca').value.toLowerCase();
@@ -468,52 +246,33 @@
                 const dataV = v.data.split('T')[0];
                 const matchBusca = v.cliente.toLowerCase().includes(busca) || v.id.toString().includes(busca);
                 const matchData = (!inicio || dataV >= inicio) && (!fim || dataV <= fim);
+                
+                // Lógica principal: Se verCanceladasGlobal for falso, oculta as canceladas
+                if (!verCanceladasGlobal && v.status === 'Cancelada') return false;
+                // Se verCanceladasGlobal for verdadeiro, mostra apenas as canceladas para facilitar a busca
+                if (verCanceladasGlobal && v.status !== 'Cancelada') return false;
+
                 return matchBusca && matchData;
             }).reverse();
 
             tbody.innerHTML = filtradas.map(v => `
-                <tr style="${v.status === 'Cancelada' ? 'text-decoration: line-through; opacity: 0.6' : ''}">
+                <tr style="${v.status === 'Cancelada' ? 'background: #fff5f5' : ''}">
                     <td>#${v.id}</td>
-                    <td>${new Date(v.data).toLocaleString()}</td>
+                    <td>${new Date(v.data).toLocaleString('pt-BR')}</td>
                     <td>${v.cliente}</td>
                     <td><b>R$ ${v.total.toFixed(2)}</b></td>
                     <td>${v.pagamento}</td>
                     <td><span class="badge ${v.status === 'Ativa' ? 'badge-success' : 'badge-danger'}">${v.status}</span></td>
                     <td>
-                        <button class="btn btn-ghost" onclick="printReceipt(${v.id})" title="Imprimir Recibo">🖨️</button>
-                        ${v.status === 'Ativa' ? `<button class="btn btn-danger" onclick="cancelSale(${v.id})" style="padding:4px 8px">Cancelar</button>` : ''}
+                        <button class="btn btn-ghost" onclick="printReceipt(${v.id})">🖨️</button>
+                        ${v.status === 'Ativa' ? `<button class="btn btn-danger" onclick="cancelSale(${v.id})" style="padding:4px">Cancelar</button>` : ''}
                     </td>
                 </tr>
             `).join('');
             updateDashboard();
         }
 
-        // --- RECIBO ---
-        function printReceipt(id) {
-            const v = db.vendas.find(v => v.id === id);
-            const area = document.getElementById('receipt-print');
-            area.innerHTML = `
-                <div style="text-align:center">
-                    <h3>RECIBO DE VENDA</h3>
-                    <p>Nº: 00${v.id}</p>
-                    <hr>
-                </div>
-                <p>Data: ${new Date(v.data).toLocaleString()}</p>
-                <p>Cliente: ${v.cliente}</p>
-                <p>Vendedor: ${v.vendedor}</p>
-                <hr>
-                <p><b>ITENS:</b><br>${v.itens}</p>
-                <hr>
-                <p style="font-size:1.2rem"><b>TOTAL: R$ ${v.total.toFixed(2)}</b></p>
-                <p>Pagamento: ${v.pagamento}</p>
-                ${v.vencimento ? `<p><b>VENCIMENTO: ${v.vencimento.split('-').reverse().join('/')}</b></p>` : ''}
-                <br><br>
-                <div style="text-align:center; border-top:1px solid #000; padding-top:5px">Assinatura</div>
-            `;
-            window.print();
-        }
-
-        // --- ACERTO ---
+        // --- ACERTO DE CONTAS (MUDANÇA NO MÉTODO) ---
         function renderAcerto() {
             const tbody = document.getElementById('acerto-table-body');
             const prazo = db.vendas.filter(v => v.pagamento === 'Prazo em Carteira' && v.status === 'Ativa');
@@ -522,34 +281,79 @@
                 <tr>
                     <td>#${v.id}</td>
                     <td>${v.cliente}</td>
-                    <td>${v.vencimento.split('-').reverse().join('/')}</td>
+                    <td>${v.vencimento ? v.vencimento.split('-').reverse().join('/') : '-'}</td>
                     <td>R$ ${v.total.toFixed(2)}</td>
-                    <td><span class="badge badge-danger">PENDENTE</span></td>
-                    <td><button class="btn btn-success" onclick="liquidar(${v.id})" style="padding:4px 8px">Receber</button></td>
+                    <td>
+                        <select id="metodo-acerto-${v.id}">
+                            <option value="Dinheiro">Dinheiro</option>
+                            <option value="PIX">PIX</option>
+                            <option value="Cartão">Cartão</option>
+                        </select>
+                    </td>
+                    <td><button class="btn btn-success" onclick="liquidar(${v.id})" style="padding:4px 8px">Dar Baixa</button></td>
                 </tr>
             `).join('');
         }
 
         function liquidar(id) {
-            if(confirm('Confirmar recebimento do valor?')) {
+            const metodo = document.getElementById(`metodo-acerto-${id}`).value;
+            if(confirm(`Confirmar recebimento via ${metodo}?`)) {
                 const v = db.vendas.find(v => v.id === id);
-                v.pagamento = 'Pago (Líquido)';
-                saveDB();
-                renderAcerto();
+                if(v) {
+                    v.pagamento = `Acertado (${metodo})`; // Atualiza a forma original para a forma paga
+                    saveDB();
+                    renderAcerto();
+                    alert("Baixa realizada com sucesso!");
+                }
             }
         }
 
-        // Inicialização
-        window.onload = () => {
-            const hoje = new Date().toISOString().split('T')[0];
-            document.getElementById('f-inicio').value = hoje;
-            document.getElementById('f-fim').value = hoje;
-            renderProducts();
-            renderClients();
-            renderSales();
-        };
+        // --- RESTANTE DAS FUNÇÕES (PRODUTOS, CLIENTES, ETC) ---
+        function saveProduct(e) { e.preventDefault(); db.produtos.push({ id: Date.now(), nome: document.getElementById('p-nome').value, unidade: document.getElementById('p-unidade').value, preco: parseFloat(document.getElementById('p-preco').value) || 0 }); saveDB(); renderProducts(); e.target.reset(); }
+        function renderProducts() { 
+            document.getElementById('prod-table-body').innerHTML = db.produtos.map(p => `<tr><td>#${p.id}</td><td>${p.nome}</td><td>${p.unidade}</td><td>R$ ${p.preco.toFixed(2)}</td><td><button onclick="deleteProd(${p.id})">X</button></td></tr>`).join('');
+            document.getElementById('v-prod-select').innerHTML = '<option value="">Selecione...</option>' + db.produtos.map(p => `<option value="${p.id}">${p.nome}</option>`).join('');
+        }
+        function deleteProd(id) { db.produtos = db.produtos.filter(p => p.id !== id); saveDB(); renderProducts(); }
+        
+        function saveClient(e) { e.preventDefault(); db.clientes.push({ id: Date.now(), nome: document.getElementById('c-nome').value, prazo: parseInt(document.getElementById('c-prazo').value) }); saveDB(); renderClients(); e.target.reset(); }
+        function renderClients() { 
+            document.getElementById('cli-table-body').innerHTML = db.clientes.map(c => `<tr><td>#${c.id}</td><td>${c.nome}</td><td>${c.prazo}d</td><td><button onclick="deleteClient(${c.id})">X</button></td></tr>`).join('');
+            document.getElementById('v-cliente').innerHTML = '<option value="">Selecione...</option>' + db.clientes.map(c => `<option value="${c.id}">${c.nome}</option>`).join('');
+        }
+        function deleteClient(id) { db.clientes = db.clientes.filter(c => c.id !== id); saveDB(); renderClients(); }
 
-        // Atalho F1 para nova venda
+        function openSaleModal() { if(db.produtos.length === 0 || db.clientes.length === 0) return alert('Cadastre produto e cliente!'); document.getElementById('modal-venda').style.display = 'flex'; }
+        function closeSaleModal() { document.getElementById('modal-venda').style.display = 'none'; }
+        function autoFillProduct() { const p = db.produtos.find(p => p.id == document.getElementById('v-prod-select').value); if(p) { document.getElementById('v-unit').value = p.preco; calcSaleTotal(); } }
+        function calcSaleTotal() { const total = (parseFloat(document.getElementById('v-qtd').value) * parseFloat(document.getElementById('v-unit').value)) + parseFloat(document.getElementById('v-acres').value) - parseFloat(document.getElementById('v-desc').value); document.getElementById('v-total-txt').innerText = total.toFixed(2); return total; }
+        function toggleCheque() { document.getElementById('div-cheque').classList.toggle('hidden', document.getElementById('v-pgto').value !== 'Cheque'); }
+
+        function executeSale(e) {
+            e.preventDefault();
+            const cliente = db.clientes.find(c => c.id == document.getElementById('v-cliente').value);
+            const total = calcSaleTotal();
+            let d = new Date(); d.setDate(d.getDate() + (cliente.prazo || 0));
+            const venda = { id: db.vendas.length + 1000, data: new Date().toISOString(), vendedor: document.getElementById('v-vendedor').value, cliente: cliente.nome, clienteId: cliente.id, total: total, pagamento: document.getElementById('v-pgto').value, vencimento: document.getElementById('v-pgto').value === 'Prazo em Carteira' ? d.toISOString().split('T')[0] : null, status: 'Ativa', itens: document.getElementById('v-prod-select').options[document.getElementById('v-prod-select').selectedIndex].text + " x" + document.getElementById('v-qtd').value };
+            db.vendas.push(venda); saveDB(); closeSaleModal(); renderSales();
+        }
+
+        function cancelSale(id) { if(confirm('Cancelar venda?')) { db.vendas.find(v => v.id === id).status = 'Cancelada'; saveDB(); renderSales(); } }
+        function updateDashboard() {
+            const hoje = new Date().toISOString().split('T')[0];
+            const tHoje = db.vendas.filter(v => v.data.startsWith(hoje) && v.status === 'Ativa').reduce((acc, v) => acc + v.total, 0);
+            const tPendente = db.vendas.filter(v => v.pagamento === 'Prazo em Carteira' && v.status === 'Ativa').reduce((acc, v) => acc + v.total, 0);
+            document.getElementById('dash-hoje').innerText = `R$ ${tHoje.toFixed(2)}`;
+            document.getElementById('dash-pendente').innerText = `R$ ${tPendente.toFixed(2)}`;
+        }
+
+        function printReceipt(id) {
+            const v = db.vendas.find(v => v.id === id);
+            document.getElementById('receipt-print').innerHTML = `<div style="text-align:center"><h3>RECIBO</h3><p>Nº: ${v.id}</p><hr></div><p>Data: ${new Date(v.data).toLocaleString()}</p><p>Cliente: ${v.cliente}</p><p>Vendedor: ${v.vendedor}</p><hr><p>ITENS:<br>${v.itens}</p><hr><h4>TOTAL: R$ ${v.total.toFixed(2)}</h4><p>Pgto: ${v.pagamento}</p>`;
+            window.print();
+        }
+
+        window.onload = () => { renderProducts(); renderClients(); renderSales(); };
         window.addEventListener('keydown', e => { if(e.key === 'F1') { e.preventDefault(); openSaleModal(); } });
     </script>
 </body>
