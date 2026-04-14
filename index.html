@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Vendas Pro v8.10 - Ações em Lote</title>
+    <title>Sistema de Vendas Pro v8.11 - Pagamentos e Acerto em Lote</title>
     <style>
         :root { --primary: #2563eb; --success: #10b981; --danger: #ef4444; --warning: #f59e0b; --bg: #f3f4f6; --text: #1f2937; --info: #0ea5e9; }
         body { font-family: 'Segoe UI', system-ui, sans-serif; margin: 0; background-color: var(--bg); color: var(--text); }
@@ -43,7 +43,7 @@
         th, td { padding: 0.9rem; text-align: left; border-bottom: 1px solid #f3f4f6; font-size: 0.9rem; }
         th { background: #f9fafb; font-weight: 600; }
         
-        /* NOVO ESTILO: Cor da linha selecionada (Azul clarinho) */
+        /* Cor da linha selecionada */
         .selected-row { background-color: #dbeafe !important; transition: background-color 0.2s; }
         
         .badge { padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: bold; text-transform: uppercase; }
@@ -64,7 +64,6 @@
         .report-footer { border-top: 2px solid #000; font-weight: bold; font-size: 14px; margin-top: 10px; }
 
         @media screen { #receipt-print { display: none; } }
-
         @media print {
             body * { visibility: hidden; }
             .no-print { display: none !important; }
@@ -131,7 +130,8 @@
                             <option value="">Todos</option>
                             <option value="Dinheiro">Dinheiro</option>
                             <option value="PIX">PIX</option>
-                            <option value="Cartão">Cartão</option>
+                            <option value="Cartão Débito">Cartão Débito</option>
+                            <option value="Cartão Crédito">Cartão Crédito</option>
                             <option value="Prazo em Carteira">Prazo</option>
                             <option value="Cheque">Cheque</option>
                         </select>
@@ -151,7 +151,7 @@
                                 <th>Total</th>
                                 <th>Pagamento</th>
                                 <th>Status</th>
-                                </tr>
+                            </tr>
                         </thead>
                         <tbody id="sales-table-body"></tbody>
                     </table>
@@ -211,7 +211,23 @@
                         <h3 style="margin:0">Acerto de Contas (Fiado)</h3>
                         <p style="font-size: 0.85rem; color: #666; margin-top: 5px; margin-bottom: 0;">Gerencie todas as vendas feitas "A Prazo em Carteira".</p>
                     </div>
-                    <button class="btn btn-ghost" onclick="imprimirRelatorioAcerto()">🖨️ Imprimir Relatório A4</button>
+                    
+                    <div style="display:flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+                        <div style="display: flex; gap: 5px; background: #f8fafc; padding: 5px 8px; border-radius: 6px; border: 1px solid #cbd5e1; align-items: center;">
+                            <span style="font-size: 0.8rem; color: #64748b; font-weight: 600; margin-right: 5px;">AÇÕES:</span>
+                            <select id="metodo-acerto-lote" style="padding: 4px; border: 1px solid #ccc; border-radius: 4px; font-size: 0.9rem;">
+                                <option value="Dinheiro">Dinheiro</option>
+                                <option value="PIX">PIX</option>
+                                <option value="Cartão Débito">Cartão Débito</option>
+                                <option value="Cartão Crédito">Cartão Crédito</option>
+                            </select>
+                            <button class="btn btn-success" onclick="liquidarSelecionados()" style="padding:4px 8px; font-size:0.9rem;" title="Dar Baixa nos selecionados">✔ Baixar</button>
+                            <button class="btn btn-ghost" onclick="cancelarBaixaSelecionados()" style="padding:4px 8px; font-size:0.9rem; color: var(--danger); border-color: var(--danger);" title="Desfazer Baixa dos selecionados">↩️ Desfazer</button>
+                        </div>
+                        
+                        <div style="border-left: 1px solid #cbd5e1; height: 30px; margin: 0 5px;"></div>
+                        <button class="btn btn-ghost" onclick="imprimirRelatorioAcerto()">🖨️ Imprimir Relatório A4</button>
+                    </div>
                 </div>
                 
                 <div class="form-row" style="background: #f8fafc; padding: 1rem; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 1.5rem;">
@@ -228,7 +244,15 @@
                 </div>
                 <div style="overflow-x: auto;">
                     <table>
-                        <thead><tr><th>Venda</th><th>Cliente</th><th>Vencimento</th><th>Valor Total</th><th>Status</th><th>Ação / Baixa</th></tr></thead>
+                        <thead><tr>
+                            <th style="width: 40px; text-align: center;"><input type="checkbox" id="check-all-acerto" onclick="toggleTodasContas(this)"></th>
+                            <th>Venda</th>
+                            <th>Cliente</th>
+                            <th>Vencimento</th>
+                            <th>Valor Total</th>
+                            <th>Status</th>
+                            <th>Pagamento Registrado</th>
+                        </tr></thead>
                         <tbody id="acerto-table-body"></tbody>
                     </table>
                 </div>
@@ -282,7 +306,12 @@
                     <div class="form-group"><label>Acréscimo R$</label><input type="number" step="0.01" id="v-acres" value="0" oninput="atualizarTotalTela()"></div>
                     <div class="form-group"><label>Desconto R$</label><input type="number" step="0.01" id="v-desc" value="0" oninput="atualizarTotalTela()"></div>
                     <div class="form-group" style="flex:2"><label>Forma de Pagamento</label><select id="v-pgto" onchange="toggleCheque()">
-                        <option value="Dinheiro">Dinheiro</option><option value="PIX">PIX</option><option value="Cartão">Cartão</option><option value="Prazo em Carteira">Prazo em Carteira</option><option value="Cheque">Cheque</option>
+                        <option value="Dinheiro">Dinheiro</option>
+                        <option value="PIX">PIX</option>
+                        <option value="Cartão Débito">Cartão Débito</option>
+                        <option value="Cartão Crédito">Cartão Crédito</option>
+                        <option value="Prazo em Carteira">Prazo em Carteira</option>
+                        <option value="Cheque">Cheque</option>
                     </select></div>
                 </div>
                 <div id="div-cheque" class="hidden"><input type="text" id="v-cheque-info" placeholder="Info do Cheque (Banco, Número)"></div>
@@ -362,16 +391,7 @@
         function renderClients() { document.getElementById('cli-table-body').innerHTML = db.clientes.map(c => `<tr><td>#${c.id}</td><td>${c.nome}</td><td>${c.prazo}d</td><td><button class="btn btn-info" onclick="editClient(${c.id})" style="padding:4px">✏️</button> <button class="btn btn-danger" onclick="deleteClient(${c.id})" style="padding:4px">X</button></td></tr>`).join(''); document.getElementById('v-cliente').innerHTML = '<option value="">Selecione...</option>' + db.clientes.map(c => `<option value="${c.id}">${c.nome}</option>`).join(''); }
         function deleteClient(id) { if(confirm('Excluir cliente?')) { db.clientes = db.clientes.filter(c => c.id !== id); saveDB(); renderClients(); } }
 
-        // --- DASHBOARD E LISTAGEM DE VENDAS ---
-        function toggleCanceladas() {
-            verCanceladasGlobal = !verCanceladasGlobal;
-            const btn = document.getElementById('btn-toggle-canceladas');
-            if(verCanceladasGlobal) { btn.innerText = "Ver Apenas Ativas"; btn.classList.add('active'); } 
-            else { btn.innerText = "Ver Canceladas"; btn.classList.remove('active'); }
-            renderSales();
-        }
-
-        // NOVO: Destacar linha selecionada
+        // --- LÓGICA DE INTERAÇÃO COM LINHAS ---
         function highlightRow(checkbox) {
             const tr = checkbox.closest('tr');
             if(checkbox.checked) {
@@ -379,6 +399,15 @@
             } else {
                 tr.classList.remove('selected-row');
             }
+        }
+
+        // --- DASHBOARD E LISTAGEM DE VENDAS ---
+        function toggleCanceladas() {
+            verCanceladasGlobal = !verCanceladasGlobal;
+            const btn = document.getElementById('btn-toggle-canceladas');
+            if(verCanceladasGlobal) { btn.innerText = "Ver Apenas Ativas"; btn.classList.add('active'); } 
+            else { btn.innerText = "Ver Canceladas"; btn.classList.remove('active'); }
+            renderSales();
         }
 
         function toggleTodasVendas(source) {
@@ -412,7 +441,6 @@
                 return matchBusca && matchData;
             }).reverse();
 
-            // Ações e Cupons foram removidos do HTML de cada linha
             tbody.innerHTML = filtradas.map(v => {
                 const dataPedStr = v.dataPedido ? v.dataPedido.split('-').reverse().join('/') : v.data.split('T')[0].split('-').reverse().join('/');
                 const dataIncStr = new Date(v.data).toLocaleString('pt-BR');
@@ -458,7 +486,7 @@
             document.getElementById('dash-pendente').innerText = `R$ ${tPendente.toFixed(2)}`;
         }
 
-        // --- NOVA LÓGICA DE AÇÕES PARA SELECIONADOS ---
+        // --- AÇÕES EM LOTE PARA VENDAS ---
         function editarSelecionado() {
             const checks = document.querySelectorAll('.check-venda:checked');
             if(checks.length !== 1) return alert("Selecione exatamente UMA venda na caixa de seleção para editar.");
@@ -496,7 +524,7 @@
             printReceiptMultiple(vendasParaImprimir, tipo);
         }
 
-        // --- LÓGICA DE IMPRESSÃO (CUPOM TÉRMICO E RELATÓRIO) ---
+        // --- LÓGICA DE IMPRESSÃO TÉRMICA (MÚLTIPLOS) ---
         function printReceiptMultiple(vendas, tipo = 'cliente') {
             document.getElementById('receipt-print').style.width = '80mm';
             let allHtml = '';
@@ -578,7 +606,6 @@
             const htmlRelatorio = document.getElementById('preview-relatorio-agrupado').innerHTML;
             document.getElementById('receipt-print').innerHTML = htmlRelatorio;
             window.print();
-            
             setTimeout(() => { document.getElementById('receipt-print').style.width = '80mm'; }, 500);
         }
 
@@ -637,6 +664,14 @@
             renderAcerto();
         }
 
+        function toggleTodasContas(source) {
+            const checkboxes = document.querySelectorAll('.check-acerto');
+            checkboxes.forEach(cb => {
+                cb.checked = source.checked;
+                highlightRow(cb);
+            });
+        }
+
         function renderAcerto() {
             const tbody = document.getElementById('acerto-table-body');
             const hoje = new Date().toISOString().split('T')[0];
@@ -644,6 +679,8 @@
             const busca = (document.getElementById('f-acerto-busca')?.value || '').toLowerCase();
             const inicio = document.getElementById('f-acerto-inicio')?.value;
             const fim = document.getElementById('f-acerto-fim')?.value;
+
+            document.getElementById('check-all-acerto').checked = false;
 
             let contas = db.vendas.filter(v => v.vencimento !== null && v.status === 'Ativa');
 
@@ -664,7 +701,7 @@
 
             contas.sort((a, b) => new Date(a.vencimento) - new Date(b.vencimento));
 
-            if(contas.length === 0) { tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding: 2rem; color: #666;">Nenhuma conta encontrada com estes filtros.</td></tr>`; return; }
+            if(contas.length === 0) { tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding: 2rem; color: #666;">Nenhuma conta encontrada com estes filtros.</td></tr>`; return; }
 
             tbody.innerHTML = contas.map(v => {
                 const isPago = v.pagamento.includes('Acertado');
@@ -672,31 +709,65 @@
                 let rowStyle = isPago ? 'background: #f0fdf4; opacity: 0.8;' : (isVencido ? 'background: #fef2f2;' : '');
                 let statusBadge = isPago ? '<span class="badge badge-success">PAGO</span>' : (isVencido ? '<span class="badge badge-danger">VENCIDO</span>' : '<span class="badge badge-warning">A VENCER</span>');
                 
-                let actionHtml = isPago 
-                    ? `<div style="display:flex; justify-content:space-between; align-items:center; gap:5px;"><span style="color: #059669; font-weight: bold;">✔ ${v.pagamento.replace('Acertado (','').replace(')','')}</span> <button class="btn btn-ghost" style="padding: 2px 6px; font-size: 0.8rem; color: var(--danger); border-color: var(--danger);" onclick="cancelarBaixa(${v.id})" title="Desfazer Baixa (Voltar para Em Aberto)">↩️</button></div>` 
-                    : `<div style="display: flex; gap: 5px;"><select id="metodo-acerto-${v.id}" style="padding: 4px;"><option value="Dinheiro">Dinheiro</option><option value="PIX">PIX</option><option value="Cartão">Cartão</option></select><button class="btn btn-success" onclick="liquidar(${v.id})" style="padding:4px 8px">Baixa</button></div>`;
+                let pgtoText = isPago ? `<span style="color: #059669; font-weight: bold;">✔ ${v.pagamento.replace('Acertado (','').replace(')','')}</span>` : '-';
                 
-                return `<tr style="${rowStyle}"><td><b>#${v.id}</b></td><td>${v.cliente}</td><td style="${isVencido ? 'color: red; font-weight: bold;' : ''}">${v.vencimento.split('-').reverse().join('/')}</td><td><b>R$ ${v.total.toFixed(2)}</b></td><td>${statusBadge}</td><td>${actionHtml}</td></tr>`;
+                return `
+                <tr style="${rowStyle}">
+                    <td style="text-align: center;"><input type="checkbox" class="check-acerto" value="${v.id}" onchange="highlightRow(this)"></td>
+                    <td><b>#${v.id}</b></td>
+                    <td>${v.cliente}</td>
+                    <td style="${isVencido ? 'color: red; font-weight: bold;' : ''}">${v.vencimento.split('-').reverse().join('/')}</td>
+                    <td><b>R$ ${v.total.toFixed(2)}</b></td>
+                    <td>${statusBadge}</td>
+                    <td>${pgtoText}</td>
+                </tr>`;
             }).join('');
         }
 
-        function liquidar(id) {
-            const metodo = document.getElementById(`metodo-acerto-${id}`).value;
-            if(confirm(`Confirmar recebimento do valor via ${metodo}?`)) {
-                const v = db.vendas.find(v => v.id === id);
-                if(v) { v.pagamento = `Acertado (${metodo})`; saveDB(); renderAcerto(); renderSales(); alert("Baixa realizada!"); }
+        // --- AÇÕES EM LOTE PARA ACERTO ---
+        function liquidarSelecionados() {
+            const checks = document.querySelectorAll('.check-acerto:checked');
+            if(checks.length === 0) return alert("Selecione pelo menos uma conta para dar baixa.");
+            const metodo = document.getElementById('metodo-acerto-lote').value;
+            
+            if(confirm(`Confirmar recebimento de ${checks.length} conta(s) via ${metodo}?`)) {
+                let baixadas = 0;
+                checks.forEach(cb => {
+                    const id = parseInt(cb.value);
+                    const v = db.vendas.find(v => v.id === id);
+                    if(v && !v.pagamento.includes('Acertado')) {
+                        v.pagamento = `Acertado (${metodo})`;
+                        baixadas++;
+                    }
+                });
+                if(baixadas > 0) {
+                    saveDB(); renderAcerto(); renderSales();
+                    alert(`${baixadas} baixa(s) realizada(s) com sucesso!`);
+                } else {
+                    alert("As contas selecionadas já estão pagas.");
+                }
             }
         }
 
-        function cancelarBaixa(id) {
-            if(confirm('Tem certeza que deseja cancelar esta baixa?\n\nA conta voltará a ficar "Em Aberto" no formato "Prazo em Carteira".')) {
-                const v = db.vendas.find(v => v.id === id);
-                if(v) { 
-                    v.pagamento = 'Prazo em Carteira'; 
-                    saveDB(); 
-                    renderAcerto(); 
-                    renderSales();
-                    alert("Baixa desfeita com sucesso!"); 
+        function cancelarBaixaSelecionados() {
+            const checks = document.querySelectorAll('.check-acerto:checked');
+            if(checks.length === 0) return alert("Selecione pelo menos uma conta para desfazer a baixa.");
+            
+            if(confirm(`Tem certeza que deseja desfazer a baixa de ${checks.length} conta(s)?\nElas voltarão a ficar "Em Aberto".`)) {
+                let desfeitas = 0;
+                checks.forEach(cb => {
+                    const id = parseInt(cb.value);
+                    const v = db.vendas.find(v => v.id === id);
+                    if(v && v.pagamento.includes('Acertado')) {
+                        v.pagamento = 'Prazo em Carteira';
+                        desfeitas++;
+                    }
+                });
+                if(desfeitas > 0) {
+                    saveDB(); renderAcerto(); renderSales();
+                    alert(`${desfeitas} baixa(s) desfeita(s) com sucesso!`);
+                } else {
+                    alert("Nenhuma das contas selecionadas possuía baixa para ser desfeita.");
                 }
             }
         }
