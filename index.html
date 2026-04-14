@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Vendas Pro v9.2 - PDV Rápido e Atalhos</title>
+    <title>Sistema de Vendas Pro v9.3 - PDV Turbo (Pesquisa Inteligente)</title>
     <style>
         :root { --primary: #2563eb; --success: #10b981; --danger: #ef4444; --warning: #f59e0b; --bg: #f3f4f6; --text: #1f2937; --info: #0ea5e9; }
         body { font-family: 'Segoe UI', system-ui, sans-serif; margin: 0; background-color: var(--bg); color: var(--text); }
@@ -79,7 +79,7 @@
 <body>
 
     <header class="no-print">
-        <h2 style="margin:0">🚀PDV VAREJÃO</h2>
+        <h2 style="margin:0">🚀 VendaFlow Pro</h2>
         <nav>
             <button id="nav-home" onclick="navigate('home')">Início/Vendas</button>
             <button id="nav-produtos" onclick="navigate('produtos')">Produtos</button>
@@ -311,19 +311,25 @@
                         <select id="v-vendedor" required></select>
                     </div>
                     <div class="form-group"><label>Tipo</label><select id="v-tipo"><option value="Venda">Venda</option><option value="Reposição">Reposição</option></select></div>
-                    <div class="form-group" style="flex:2"><label>Cliente</label><select id="v-cliente" required></select></div>
+                    
+                    <div class="form-group" style="flex:2">
+                        <label>Cliente</label>
+                        <input type="text" id="v-cliente" list="dl-clientes" placeholder="Pesquise por código ou nome..." required autocomplete="off">
+                        <datalist id="dl-clientes"></datalist>
+                    </div>
                 </div>
 
                 <div style="background:#f8fafc; padding:1.5rem; border-radius:8px; margin:1rem 0; border: 1px solid #e2e8f0;">
                     <h4 style="margin-top: 0; margin-bottom: 1rem; color: var(--primary);">🛒 Adicionar Produtos</h4>
                     <div class="form-row">
+                        
                         <div class="form-group" style="flex:2">
                             <label>Selecione o Produto</label>
-                            <select id="v-prod-select" onchange="autoFillProduct()">
-                                <option value="">Selecione...</option>
-                            </select>
+                            <input type="text" id="v-prod-input" list="dl-produtos" placeholder="Pesquise por código ou nome..." autocomplete="off" onchange="autoFillProduct()">
+                            <datalist id="dl-produtos"></datalist>
                         </div>
-                        <div class="form-group"><label>Qtd</label><input type="number" id="v-qtd" value="1" min="0.001" step="any"></div>
+                        
+                        <div class="form-group"><label>Qtd</label><input type="number" id="v-qtd" value="0" step="any"></div>
                         <div class="form-group"><label>Unitário R$</label><input type="number" step="0.01" id="v-unit"></div>
                         <div class="form-group" style="justify-content: flex-end;">
                             <button type="button" class="btn btn-primary" onclick="adicionarAoCarrinho()">+ Adicionar</button>
@@ -448,12 +454,18 @@
 
         function saveProduct(e) { e.preventDefault(); const idEdit = document.getElementById('p-id-edit').value; const pNome = document.getElementById('p-nome').value; const pUnidade = document.getElementById('p-unidade').value; const pPreco = parseFloat(document.getElementById('p-preco').value) || 0; if (idEdit) { const idx = db.produtos.findIndex(p => p.id == idEdit); if (idx > -1) { db.produtos[idx] = { ...db.produtos[idx], nome: pNome, unidade: pUnidade, preco: pPreco }; alert("Produto atualizado!"); } } else { db.produtos.push({ id: Date.now(), nome: pNome, unidade: pUnidade, preco: pPreco }); } saveDB(); renderProducts(); e.target.reset(); document.getElementById('p-id-edit').value = ''; document.getElementById('btn-prod-save').innerText = 'Salvar Produto'; }
         function editProduct(id) { const p = db.produtos.find(p => p.id === id); if (!p) return; document.getElementById('p-id-edit').value = p.id; document.getElementById('p-nome').value = p.nome; document.getElementById('p-unidade').value = p.unidade; document.getElementById('p-preco').value = p.preco; document.getElementById('btn-prod-save').innerText = 'Atualizar Produto'; window.scrollTo(0,0); }
-        function renderProducts() { document.getElementById('prod-table-body').innerHTML = db.produtos.map(p => `<tr><td>#${p.id}</td><td>${p.nome}</td><td>${p.unidade}</td><td>R$ ${p.preco.toFixed(2)}</td><td><button type="button" class="btn btn-info" onclick="editProduct(${p.id})" style="padding:4px">✏️</button> <button type="button" class="btn btn-danger" onclick="deleteProd(${p.id})" style="padding:4px">X</button></td></tr>`).join(''); document.getElementById('v-prod-select').innerHTML = '<option value="">Selecione...</option>' + db.produtos.map(p => `<option value="${p.id}">${p.nome}</option>`).join(''); }
+        function renderProducts() { 
+            document.getElementById('prod-table-body').innerHTML = db.produtos.map(p => `<tr><td>#${p.id}</td><td>${p.nome}</td><td>${p.unidade}</td><td>R$ ${p.preco.toFixed(2)}</td><td><button type="button" class="btn btn-info" onclick="editProduct(${p.id})" style="padding:4px">✏️</button> <button type="button" class="btn btn-danger" onclick="deleteProd(${p.id})" style="padding:4px">X</button></td></tr>`).join(''); 
+            document.getElementById('dl-produtos').innerHTML = db.produtos.map(p => `<option value="${p.id} - ${p.nome}">`).join(''); 
+        }
         function deleteProd(id) { if(confirm('Excluir produto?')) { db.produtos = db.produtos.filter(p => p.id !== id); saveDB(); renderProducts(); } }
         
         function saveClient(e) { e.preventDefault(); const idEdit = document.getElementById('c-id-edit').value; const cNome = document.getElementById('c-nome').value; const cPrazo = parseInt(document.getElementById('c-prazo').value) || 0; if (idEdit) { const idx = db.clientes.findIndex(c => c.id == idEdit); if (idx > -1) { db.clientes[idx] = { ...db.clientes[idx], nome: cNome, prazo: cPrazo }; alert("Cliente atualizado!"); } } else { db.clientes.push({ id: Date.now(), nome: cNome, prazo: cPrazo }); } saveDB(); renderClients(); e.target.reset(); document.getElementById('c-id-edit').value = ''; document.getElementById('btn-cli-save').innerText = 'Salvar Cliente'; }
         function editClient(id) { const c = db.clientes.find(c => c.id === id); if (!c) return; document.getElementById('c-id-edit').value = c.id; document.getElementById('c-nome').value = c.nome; document.getElementById('c-prazo').value = c.prazo; document.getElementById('btn-cli-save').innerText = 'Atualizar Cliente'; window.scrollTo(0,0); }
-        function renderClients() { document.getElementById('cli-table-body').innerHTML = db.clientes.map(c => `<tr><td>#${c.id}</td><td>${c.nome}</td><td>${c.prazo}d</td><td><button type="button" class="btn btn-info" onclick="editClient(${c.id})" style="padding:4px">✏️</button> <button type="button" class="btn btn-danger" onclick="deleteClient(${c.id})" style="padding:4px">X</button></td></tr>`).join(''); document.getElementById('v-cliente').innerHTML = '<option value="">Selecione...</option>' + db.clientes.map(c => `<option value="${c.id}">${c.nome}</option>`).join(''); }
+        function renderClients() { 
+            document.getElementById('cli-table-body').innerHTML = db.clientes.map(c => `<tr><td>#${c.id}</td><td>${c.nome}</td><td>${c.prazo}d</td><td><button type="button" class="btn btn-info" onclick="editClient(${c.id})" style="padding:4px">✏️</button> <button type="button" class="btn btn-danger" onclick="deleteClient(${c.id})" style="padding:4px">X</button></td></tr>`).join(''); 
+            document.getElementById('dl-clientes').innerHTML = db.clientes.map(c => `<option value="${c.id} - ${c.nome}">`).join(''); 
+        }
         function deleteClient(id) { if(confirm('Excluir cliente?')) { db.clientes = db.clientes.filter(c => c.id !== id); saveDB(); renderClients(); } }
 
         function highlightRow(checkbox) { const tr = checkbox.closest('tr'); if(checkbox.checked) { tr.classList.add('selected-row'); } else { tr.classList.remove('selected-row'); } }
@@ -840,14 +852,31 @@
         }
 
         // --- MODAL DE VENDA E CARRINHO ---
-        function autoFillProduct() { const p = db.produtos.find(p => p.id == document.getElementById('v-prod-select').value); if(p) { document.getElementById('v-unit').value = p.preco; document.getElementById('v-qtd').value = 1; } }
-        function toggleCheque() { document.getElementById('div-cheque').classList.toggle('hidden', document.getElementById('v-pgto').value !== 'Cheque'); }
-        function adicionarAoCarrinho() {
-            const prodId = document.getElementById('v-prod-select').value; if(!prodId) return alert('Selecione um produto para adicionar!');
-            const p = db.produtos.find(p => p.id == prodId); const qtd = parseFloat(document.getElementById('v-qtd').value.replace(',', '.')) || 1; const unit = parseFloat(document.getElementById('v-unit').value) || 0;
-            carrinhoAtual.push({ prodId: p.id, nome: p.nome, qtd: qtd, unit: unit, totalItem: qtd * unit });
-            document.getElementById('v-prod-select').value = ""; document.getElementById('v-qtd').value = "1"; document.getElementById('v-unit').value = ""; renderizarCarrinhoNaTela(); document.getElementById('v-prod-select').focus();
+        function autoFillProduct() { 
+            const val = document.getElementById('v-prod-input').value; if(!val) return;
+            let prodId = parseInt(val.split(' - ')[0]);
+            const p = db.produtos.find(p => p.id === prodId) || db.produtos.find(p => p.nome.toLowerCase() === val.toLowerCase());
+            if(p) { document.getElementById('v-unit').value = p.preco; } 
         }
+        function toggleCheque() { document.getElementById('div-cheque').classList.toggle('hidden', document.getElementById('v-pgto').value !== 'Cheque'); }
+        
+        function adicionarAoCarrinho() {
+            const prodVal = document.getElementById('v-prod-input').value;
+            if(!prodVal) return alert('Selecione ou digite um produto válido!');
+            let prodId = parseInt(prodVal.split(' - ')[0]);
+            const p = db.produtos.find(p => p.id === prodId) || db.produtos.find(p => p.nome.toLowerCase() === prodVal.toLowerCase());
+            if(!p) return alert('Produto não encontrado! Selecione um produto válido da lista.');
+
+            const qtd = parseFloat(document.getElementById('v-qtd').value.replace(',', '.')) || 0; 
+            if(qtd <= 0) return alert('A quantidade deve ser maior que zero!');
+
+            const unit = parseFloat(document.getElementById('v-unit').value) || 0;
+            carrinhoAtual.push({ prodId: p.id, nome: p.nome, qtd: qtd, unit: unit, totalItem: qtd * unit });
+            
+            document.getElementById('v-prod-input').value = ""; document.getElementById('v-qtd').value = "0"; document.getElementById('v-unit').value = ""; 
+            renderizarCarrinhoNaTela(); document.getElementById('v-prod-input').focus();
+        }
+
         function removerDoCarrinho(index) { carrinhoAtual.splice(index, 1); renderizarCarrinhoNaTela(); }
         function renderizarCarrinhoNaTela() {
             const tbody = document.getElementById('cart-table-body'); const tabelaContainer = document.getElementById('tabela-carrinho');
@@ -865,12 +894,14 @@
         function openSaleModal() { 
             if(db.vendedores.length === 0) return alert('Cadastre pelo menos 1 vendedor primeiro na aba "Vendedores"!');
             if(db.produtos.length === 0 || db.clientes.length === 0) return alert('Cadastre produto e cliente!'); 
+            
             document.getElementById('form-venda').reset(); document.getElementById('v-id-edit').value = ''; document.getElementById('modal-title-venda').innerText = "Nova Venda"; document.getElementById('btn-save-venda').innerText = "FINALIZAR NOVA VENDA (F11)"; 
             document.getElementById('v-data').value = new Date().toISOString().split('T')[0];
+            document.getElementById('v-qtd').value = "0"; // Quantidade Padrão Zero
+            
             carrinhoAtual = []; renderizarCarrinhoNaTela(); 
             document.getElementById('modal-venda').style.display = 'flex'; 
             
-            // Foco automático no Vendedor após abrir o modal
             setTimeout(() => { document.getElementById('v-vendedor').focus(); }, 100);
         }
 
@@ -880,7 +911,11 @@
             document.getElementById('v-data').value = v.dataPedido ? v.dataPedido : v.data.split('T')[0];
             document.getElementById('v-vendedor').value = v.vendedor || ''; 
             document.getElementById('v-tipo').value = v.tipo || 'Venda'; 
-            document.getElementById('v-cliente').value = v.clienteId || ''; 
+            
+            const cliente = db.clientes.find(c => c.id == v.clienteId);
+            if(cliente) { document.getElementById('v-cliente').value = `${cliente.id} - ${cliente.nome}`; }
+            
+            document.getElementById('v-qtd').value = "0"; // Mantém em zero na edição
             document.getElementById('v-acres').value = v.acres || 0; 
             document.getElementById('v-desc').value = v.desc || 0; 
             document.getElementById('v-pgto').value = v.pagamento || 'Dinheiro';
@@ -903,14 +938,17 @@
             e.preventDefault();
             if(carrinhoAtual.length === 0) return alert('Você precisa adicionar pelo menos um produto ao carrinho!');
             const idEdit = document.getElementById('v-id-edit').value;
-            const cliId = document.getElementById('v-cliente').value;
             const vendNome = document.getElementById('v-vendedor').value;
             const dataPedido = document.getElementById('v-data').value; 
             
-            if(!cliId) return alert('Selecione o cliente!');
+            const cliVal = document.getElementById('v-cliente').value;
+            if(!cliVal) return alert('Selecione o cliente!');
+            let cliId = parseInt(cliVal.split(' - ')[0]);
+            let cliente = db.clientes.find(c => c.id === cliId) || db.clientes.find(c => c.nome.toLowerCase() === cliVal.toLowerCase());
+            if(!cliente) return alert('Cliente não encontrado! Pesquise e selecione um cliente válido da lista.');
+
             if(!vendNome) return alert('Selecione o vendedor!');
 
-            const cliente = db.clientes.find(c => c.id == cliId);
             const total = atualizarTotalTela();
             const pgto = document.getElementById('v-pgto').value;
             
@@ -951,7 +989,7 @@
             }
         }
         
-        // --- NAVEGAÇÃO DE TECLADO (NOVO) ---
+        // --- NAVEGAÇÃO DE TECLADO ---
         function setupKeyboardNavigation() {
             const preventSubmit = (e) => { if(e.key === 'Enter') e.preventDefault(); };
 
@@ -959,9 +997,9 @@
                 if(e.key === 'Enter') { e.preventDefault(); document.getElementById('v-cliente').focus(); }
             });
             document.getElementById('v-cliente').addEventListener('keydown', (e) => {
-                if(e.key === 'Enter') { e.preventDefault(); document.getElementById('v-prod-select').focus(); }
+                if(e.key === 'Enter') { e.preventDefault(); document.getElementById('v-prod-input').focus(); }
             });
-            document.getElementById('v-prod-select').addEventListener('keydown', (e) => {
+            document.getElementById('v-prod-input').addEventListener('keydown', (e) => {
                 if(e.key === 'Enter') { e.preventDefault(); document.getElementById('v-qtd').focus(); }
             });
             document.getElementById('v-qtd').addEventListener('keydown', (e) => {
@@ -970,11 +1008,10 @@
             document.getElementById('v-unit').addEventListener('keydown', (e) => {
                 if(e.key === 'Enter') { 
                     e.preventDefault(); 
-                    adicionarAoCarrinho(); // A função adicionarAoCarrinho já possui o foco de volta no v-prod-select
+                    adicionarAoCarrinho(); 
                 }
             });
 
-            // Evita que o "Enter" nos outros campos feche o modal acidentalmente
             ['v-data', 'v-tipo', 'v-acres', 'v-desc', 'v-pgto', 'v-cheque-info'].forEach(id => {
                 const el = document.getElementById(id);
                 if(el) el.addEventListener('keydown', preventSubmit);
@@ -994,8 +1031,8 @@
             if(e.key === 'F11') {
                 const modalVenda = document.getElementById('modal-venda');
                 if(modalVenda.style.display === 'flex') {
-                    e.preventDefault(); // Impede o navegador de entrar em tela cheia
-                    document.getElementById('btn-save-venda').click(); // Dispara o botão finalizar
+                    e.preventDefault(); 
+                    document.getElementById('btn-save-venda').click(); 
                 }
             }
         });
