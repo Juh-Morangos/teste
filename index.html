@@ -3,148 +3,180 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Gestão de Vendas</title>
+    <title>Sistema de Vendas Pro</title>
     <style>
-        :root { --primary: #2563eb; --bg: #f3f4f6; --text: #1f2937; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; background-color: var(--bg); color: var(--text); }
-        header { background-color: var(--primary); color: white; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; }
-        nav button { background: none; border: none; color: white; font-size: 1rem; cursor: pointer; margin-left: 1rem; padding: 0.5rem 1rem; border-radius: 4px; }
-        nav button:hover { background-color: rgba(255,255,255,0.2); }
-        .container { padding: 2rem; max-width: 1200px; margin: 0 auto; }
+        :root { --primary: #2563eb; --success: #10b981; --danger: #ef4444; --warning: #f59e0b; --bg: #f3f4f6; --text: #1f2937; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; margin: 0; background-color: var(--bg); color: var(--text); }
+        
+        /* Layout */
+        header { background: var(--primary); color: white; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; }
+        nav button { background: none; border: none; color: white; font-size: 0.9rem; cursor: pointer; margin-left: 0.5rem; padding: 0.6rem 1rem; border-radius: 6px; transition: 0.2s; }
+        nav button:hover { background: rgba(255,255,255,0.15); }
+        .container { padding: 1.5rem; max-width: 1300px; margin: 0 auto; }
         .page { display: none; }
         .page.active { display: block; }
-        .card { background: white; padding: 1.5rem; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 1.5rem; }
-        .form-row { display: flex; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap; }
-        .form-group { flex: 1; display: flex; flex-direction: column; min-width: 200px; }
-        label { margin-bottom: 0.5rem; font-weight: bold; font-size: 0.9rem; }
-        input, select { padding: 0.5rem; border: 1px solid #ccc; border-radius: 4px; }
-        button.btn { background-color: var(--primary); color: white; border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer; font-weight: bold; }
-        button.btn:hover { background-color: #1d4ed8; }
-        button.btn-success { background-color: #10b981; }
-        table { width: 100%; border-collapse: collapse; margin-top: 1rem; font-size: 0.9rem; }
-        th, td { padding: 0.75rem; text-align: left; border-bottom: 1px solid #e5e7eb; }
-        th { background-color: #f9fafb; }
         
-        /* Modal Styles */
-        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; }
-        .modal { background: white; padding: 2rem; border-radius: 8px; width: 90%; max-width: 800px; max-height: 90vh; overflow-y: auto; }
-        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
-        .close-btn { background: none; border: none; font-size: 1.5rem; cursor: pointer; }
+        /* Dashboard Cards */
+        .dash-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+        .dash-card { background: white; padding: 1.5rem; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border-left: 5px solid var(--primary); }
+        .dash-card h4 { margin: 0; font-size: 0.8rem; color: #6b7280; text-transform: uppercase; }
+        .dash-card .value { font-size: 1.5rem; font-weight: bold; margin-top: 0.5rem; display: block; }
+
+        /* UI Elements */
+        .card { background: white; padding: 1.5rem; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 1rem; }
+        .form-row { display: flex; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap; }
+        .form-group { flex: 1; display: flex; flex-direction: column; min-width: 180px; }
+        label { margin-bottom: 0.4rem; font-weight: 600; font-size: 0.85rem; }
+        input, select { padding: 0.6rem; border: 1px solid #d1d5db; border-radius: 6px; outline: none; }
+        input:focus { border-color: var(--primary); }
+        
+        button.btn { padding: 0.6rem 1.2rem; border-radius: 6px; border: none; cursor: pointer; font-weight: 600; transition: 0.2s; display: inline-flex; align-items: center; gap: 5px; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-success { background: var(--success); color: white; }
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-ghost { background: #e5e7eb; color: var(--text); }
+        .btn:hover { opacity: 0.9; transform: translateY(-1px); }
+
+        table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; }
+        th, td { padding: 0.9rem; text-align: left; border-bottom: 1px solid #f3f4f6; font-size: 0.9rem; }
+        th { background: #f9fafb; font-weight: 600; }
+        .badge { padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: bold; }
+        .badge-success { background: #d1fae5; color: #065f46; }
+        .badge-danger { background: #fee2e2; color: #991b1b; }
+
+        /* Modal */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); justify-content: center; align-items: center; z-index: 1000; }
+        .modal { background: white; padding: 2rem; border-radius: 12px; width: 95%; max-width: 900px; max-height: 90vh; overflow-y: auto; }
+        
+        /* Estilo de Impressão */
+        @media print {
+            body * { visibility: hidden; }
+            #receipt-print, #receipt-print * { visibility: visible; }
+            #receipt-print { position: absolute; left: 0; top: 0; width: 80mm; padding: 5mm; color: black; }
+            .no-print { display: none !important; }
+        }
+
+        #receipt-print { display: none; font-family: 'Courier New', Courier, monospace; font-size: 12px; }
         .hidden { display: none !important; }
     </style>
 </head>
 <body>
 
-    <header>
-        <h2>💼 SisVendas</h2>
+    <header class="no-print">
+        <h2 style="margin:0">🚀 VendaFlow Pro</h2>
         <nav>
-            <button onclick="navigate('home')">Página Inicial</button>
-            <button onclick="navigate('acerto')">Acerto de Contas</button>
+            <button onclick="navigate('home')">Início/Vendas</button>
+            <button onclick="navigate('produtos')">Produtos</button>
             <button onclick="navigate('clientes')">Clientes</button>
+            <button onclick="navigate('acerto')">Acerto de Contas</button>
         </nav>
     </header>
 
-    <div class="container">
+    <div class="container no-print">
+        
+        <div id="dash-summary" class="dash-grid">
+            <div class="dash-card">
+                <h4>Vendas Hoje</h4>
+                <span class="value" id="dash-hoje">R$ 0,00</span>
+            </div>
+            <div class="dash-card" style="border-left-color: var(--success)">
+                <h4>Faturamento Mês</h4>
+                <span class="value" id="dash-mes">R$ 0,00</span>
+            </div>
+            <div class="dash-card" style="border-left-color: var(--warning)">
+                <h4>Total Pendente (Fiado)</h4>
+                <span class="value" id="dash-pendente">R$ 0,00</span>
+            </div>
+        </div>
+
         <section id="home" class="page active">
             <div class="card">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                    <h3>Vendas do Dia</h3>
-                    <button class="btn btn-success" onclick="openModal()">+ Nova Venda</button>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                    <h3 style="margin:0">Histórico de Vendas</h3>
+                    <button class="btn btn-success" onclick="openSaleModal()">+ Nova Venda (F1)</button>
                 </div>
                 
                 <div class="form-row">
-                    <div class="form-group">
-                        <label>Período Inicial</label>
-                        <input type="date" id="filter-date-start">
-                    </div>
-                    <div class="form-group">
-                        <label>Período Final</label>
-                        <input type="date" id="filter-date-end">
-                    </div>
-                    <div class="form-group">
-                        <label>Pesquisar Cliente</label>
-                        <input type="text" id="filter-client" placeholder="Nome ou Código" onkeyup="renderSales()">
-                    </div>
-                    <div class="form-group">
-                        <label>Nº da Venda</label>
-                        <input type="number" id="filter-sale-id" placeholder="Número" onkeyup="renderSales()">
-                    </div>
+                    <div class="form-group"><label>De:</label><input type="date" id="f-inicio" onchange="renderSales()"></div>
+                    <div class="form-group"><label>Até:</label><input type="date" id="f-fim" onchange="renderSales()"></div>
+                    <div class="form-group"><label>Cliente/Nº Venda:</label><input type="text" id="f-busca" placeholder="Pesquisar..." onkeyup="renderSales()"></div>
                 </div>
-            </div>
 
-            <div class="card" style="overflow-x: auto;">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Nº Venda</th>
-                            <th>Data</th>
-                            <th>Tipo</th>
-                            <th>Cód. Cliente</th>
-                            <th>Nome Cliente</th>
-                            <th>Prazo (Dias)</th>
-                            <th>Vendedor</th>
-                            <th>Total</th>
-                            <th>Pagamento</th>
-                        </tr>
-                    </thead>
-                    <tbody id="sales-table-body">
-                        </tbody>
-                </table>
+                <div style="overflow-x: auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Nº</th>
+                                <th>Data/Hora</th>
+                                <th>Cliente</th>
+                                <th>Total</th>
+                                <th>Pagamento</th>
+                                <th>Status</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="sales-table-body"></tbody>
+                    </table>
+                </div>
             </div>
         </section>
 
-        <section id="acerto" class="page">
+        <section id="produtos" class="page">
             <div class="card">
-                <h3>Acerto de Contas (Fiado/A Prazo)</h3>
+                <h3>Cadastro de Produtos</h3>
+                <form id="form-produto" onsubmit="saveProduct(event)">
+                    <div class="form-row">
+                        <div class="form-group"><label>Nome do Produto</label><input type="text" id="p-nome" required></div>
+                        <div class="form-group">
+                            <label>Unidade de Medida</label>
+                            <select id="p-unidade">
+                                <option value="Unid">Unidade (Unid)</option>
+                                <option value="Cx">Caixa (Cx)</option>
+                                <option value="Kg">Quilo (Kg)</option>
+                                <option value="Pct">Pacote (Pct)</option>
+                            </select>
+                        </div>
+                        <div class="form-group"><label>Preço Sugerido</label><input type="number" step="0.01" id="p-preco"></div>
+                        <div class="form-group" style="justify-content: flex-end;"><button type="submit" class="btn btn-primary">Salvar Produto</button></div>
+                    </div>
+                </form>
+            </div>
+            <div class="card">
                 <table>
-                    <thead>
-                        <tr>
-                            <th>Nº Venda</th>
-                            <th>Cliente</th>
-                            <th>Data da Venda</th>
-                            <th>Vencimento</th>
-                            <th>Valor Total</th>
-                            <th>Status</th>
-                            <th>Ação</th>
-                        </tr>
-                    </thead>
-                    <tbody id="acerto-table-body">
-                    </tbody>
+                    <thead><tr><th>Código</th><th>Produto</th><th>Medida</th><th>Preço</th><th>Ações</th></tr></thead>
+                    <tbody id="prod-table-body"></tbody>
                 </table>
             </div>
         </section>
 
         <section id="clientes" class="page">
             <div class="card">
-                <h3>Novo Cliente</h3>
+                <h3>Cadastro de Clientes</h3>
                 <form id="form-cliente" onsubmit="saveClient(event)">
+                    <input type="hidden" id="c-id-edit">
                     <div class="form-row">
-                        <div class="form-group">
-                            <label>Nome do Cliente</label>
-                            <input type="text" id="cli-nome" required>
-                        </div>
-                        <div class="form-group">
-                            <label>Prazo Padrão (Dias)</label>
-                            <input type="number" id="cli-prazo" required min="0" value="30">
-                        </div>
+                        <div class="form-group"><label>Nome Completo</label><input type="text" id="c-nome" required></div>
+                        <div class="form-group"><label>Prazo Padrão (Dias)</label><input type="number" id="c-prazo" value="30"></div>
                         <div class="form-group" style="justify-content: flex-end;">
-                            <button type="submit" class="btn btn-success">Cadastrar Cliente</button>
+                            <button type="submit" class="btn btn-primary" id="btn-cli-save">Cadastrar Cliente</button>
                         </div>
                     </div>
                 </form>
             </div>
             <div class="card">
-                <h3>Clientes Cadastrados</h3>
                 <table>
-                    <thead>
-                        <tr>
-                            <th>Código</th>
-                            <th>Nome</th>
-                            <th>Prazo Cadastrado</th>
-                        </tr>
-                    </thead>
-                    <tbody id="clientes-table-body">
-                    </tbody>
+                    <thead><tr><th>Código</th><th>Nome</th><th>Prazo</th><th>Ações</th></tr></thead>
+                    <tbody id="cli-table-body"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <section id="acerto" class="page">
+            <div class="card">
+                <h3>Contas a Receber (Prazo)</h3>
+                <table>
+                    <thead><tr><th>Venda</th><th>Cliente</th><th>Vencimento</th><th>Valor</th><th>Status</th><th>Ação</th></tr></thead>
+                    <tbody id="acerto-table-body"></tbody>
                 </table>
             </div>
         </section>
@@ -152,322 +184,152 @@
 
     <div class="modal-overlay" id="modal-venda">
         <div class="modal">
-            <div class="modal-header">
-                <h3>Registrar Nova Venda</h3>
-                <button class="close-btn" onclick="closeModal()">&times;</button>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem">
+                <h2 style="margin:0">Finalizar Venda</h2>
+                <button onclick="closeSaleModal()" style="font-size:1.5rem; border:none; background:none; cursor:pointer">&times;</button>
             </div>
-            <form id="form-venda" onsubmit="saveSale(event)">
+            <form id="form-venda" onsubmit="executeSale(event)">
                 <div class="form-row">
+                    <div class="form-group"><label>Vendedor</label><input type="text" id="v-vendedor" required></div>
                     <div class="form-group">
-                        <label>Vendedor</label>
-                        <input type="text" id="v-vendedor" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Tipo de Operação</label>
-                        <select id="v-tipo" required>
-                            <option value="Venda">Venda</option>
-                            <option value="Reposição">Reposição</option>
-                        </select>
+                        <label>Tipo</label>
+                        <select id="v-tipo"><option value="Venda">Venda</option><option value="Reposição">Reposição</option></select>
                     </div>
                     <div class="form-group">
                         <label>Cliente</label>
-                        <select id="v-cliente" required onchange="updateClientPrazoInfo()">
-                            <option value="">Selecione...</option>
-                        </select>
-                        <small id="v-cliente-info" style="color: gray; margin-top: 4px;"></small>
+                        <select id="v-cliente" required onchange="updateClientInfo()"></select>
                     </div>
                 </div>
 
-                <hr style="margin: 1rem 0; border: 0; border-top: 1px solid #eee;">
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Cód Produto</label>
-                        <input type="text" id="v-prod-cod" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Produto</label>
-                        <input type="text" id="v-prod-nome" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Quantidade</label>
-                        <input type="number" id="v-qtd" required min="1" oninput="calcTotal()">
-                    </div>
-                    <div class="form-group">
-                        <label>Valor Unit. (R$)</label>
-                        <input type="number" step="0.01" id="v-unit" required oninput="calcTotal()">
+                <div style="background:#f8fafc; padding:1rem; border-radius:8px; margin:1rem 0">
+                    <div class="form-row">
+                        <div class="form-group" style="flex:2">
+                            <label>Produto</label>
+                            <select id="v-prod-select" onchange="autoFillProduct()">
+                                <option value="">Selecione um produto...</option>
+                            </select>
+                        </div>
+                        <div class="form-group"><label>Qtd</label><input type="number" id="v-qtd" value="1" min="1" oninput="calcSaleTotal()"></div>
+                        <div class="form-group"><label>Unitário R$</label><input type="number" step="0.01" id="v-unit" oninput="calcSaleTotal()"></div>
                     </div>
                 </div>
 
                 <div class="form-row">
+                    <div class="form-group"><label>Acréscimo R$ (+)</label><input type="number" step="0.01" id="v-acres" value="0" oninput="calcSaleTotal()"></div>
+                    <div class="form-group"><label>Desconto R$ (-)</label><input type="number" step="0.01" id="v-desc" value="0" oninput="calcSaleTotal()"></div>
                     <div class="form-group">
-                        <label>Forma de Pagamento</label>
-                        <select id="v-pagamento" required onchange="checkPaymentType()">
+                        <label>Pagamento</label>
+                        <select id="v-pgto" onchange="toggleCheque()">
                             <option value="Dinheiro">Dinheiro</option>
                             <option value="PIX">PIX</option>
-                            <option value="Cartão de Crédito">Cartão de Crédito</option>
-                            <option value="Cartão de Débito">Cartão de Débito</option>
+                            <option value="Cartão">Cartão</option>
                             <option value="Prazo em Carteira">Prazo em Carteira</option>
                             <option value="Cheque">Cheque</option>
                         </select>
                     </div>
-                    <div class="form-group hidden" id="div-cheque">
-                        <label>Número do Cheque</label>
-                        <input type="text" id="v-cheque-num">
-                    </div>
                 </div>
 
-                <div class="form-row" style="align-items: center; justify-content: space-between; background: #f9fafb; padding: 1rem; border-radius: 4px;">
-                    <div style="font-size: 1.2rem; font-weight: bold;">
-                        Total: R$ <span id="v-total-display">0.00</span>
-                    </div>
-                    <button type="submit" class="btn btn-success">Finalizar Venda</button>
+                <div id="div-cheque" class="hidden">
+                    <div class="form-group" style="margin-bottom:1rem"><label>Dados do Cheque</label><input type="text" id="v-cheque-info" placeholder="Banco, Nº, Nome..."></div>
+                </div>
+
+                <div style="display:flex; justify-content:space-between; align-items:center; background:#1e293b; color:white; padding:1.5rem; border-radius:8px">
+                    <div><span style="font-size:0.9rem; opacity:0.8">TOTAL A PAGAR</span><br><b style="font-size:1.8rem">R$ <span id="v-total-txt">0,00</span></b></div>
+                    <button type="submit" class="btn btn-success" style="padding:1rem 2rem; font-size:1.1rem">FINALIZAR VENDA</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <script>
-        // --- BANCO DE DADOS SIMULADO (LocalStorage) ---
-        let clientes = JSON.parse(localStorage.getItem('clientes')) || [];
-        let vendas = JSON.parse(localStorage.getItem('vendas')) || [];
+    <div id="receipt-print"></div>
 
-        // --- NAVEGAÇÃO ---
-        function navigate(pageId) {
-            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-            document.getElementById(pageId).classList.add('active');
-            if(pageId === 'home') renderSales();
-            if(pageId === 'acerto') renderAcerto();
-            if(pageId === 'clientes') renderClients();
+    <script>
+        // Banco de Dados Local
+        let db = {
+            clientes: JSON.parse(localStorage.getItem('db_clientes')) || [],
+            produtos: JSON.parse(localStorage.getItem('db_produtos')) || [],
+            vendas: JSON.parse(localStorage.getItem('db_vendas')) || []
+        };
+
+        function saveDB() {
+            localStorage.setItem('db_clientes', JSON.stringify(db.clientes));
+            localStorage.setItem('db_produtos', JSON.stringify(db.produtos));
+            localStorage.setItem('db_vendas', JSON.stringify(db.vendas));
+            updateDashboard();
         }
 
-        // --- CLIENTES ---
+        // Navegação
+        function navigate(page) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById(page).classList.add('active');
+            if(page === 'home') renderSales();
+            if(page === 'produtos') renderProducts();
+            if(page === 'clientes') renderClients();
+            if(page === 'acerto') renderAcerto();
+        }
+
+        // --- GESTÃO DE PRODUTOS ---
+        function saveProduct(e) {
+            e.preventDefault();
+            const prod = {
+                id: db.produtos.length > 0 ? Math.max(...db.produtos.map(p => p.id)) + 1 : 101,
+                nome: document.getElementById('p-nome').value,
+                unidade: document.getElementById('p-unidade').value,
+                preco: parseFloat(document.getElementById('p-preco').value) || 0
+            };
+            db.produtos.push(prod);
+            saveDB();
+            renderProducts();
+            e.target.reset();
+        }
+
+        function renderProducts() {
+            const tbody = document.getElementById('prod-table-body');
+            tbody.innerHTML = db.produtos.map(p => `
+                <tr>
+                    <td>#${p.id}</td>
+                    <td>${p.nome}</td>
+                    <td>${p.unidade}</td>
+                    <td>R$ ${p.preco.toFixed(2)}</td>
+                    <td><button class="btn btn-danger" onclick="deleteProd(${p.id})" style="padding:4px 8px">Excluir</button></td>
+                </tr>
+            `).join('');
+            
+            // Atualiza select de produtos na venda
+            const vSelect = document.getElementById('v-prod-select');
+            vSelect.innerHTML = '<option value="">Selecione um produto...</option>' + 
+                db.produtos.map(p => `<option value="${p.id}">${p.nome} (${p.unidade})</option>`).join('');
+        }
+
+        function deleteProd(id) {
+            if(confirm('Excluir produto?')) {
+                db.produtos = db.produtos.filter(p => p.id !== id);
+                saveDB();
+                renderProducts();
+            }
+        }
+
+        // --- GESTÃO DE CLIENTES ---
         function saveClient(e) {
             e.preventDefault();
-            const nome = document.getElementById('cli-nome').value;
-            const prazo = document.getElementById('cli-prazo').value;
-            const codigo = clientes.length > 0 ? Math.max(...clientes.map(c => c.codigo)) + 1 : 1;
+            const idEdit = document.getElementById('c-id-edit').value;
+            const nome = document.getElementById('c-nome').value;
+            const prazo = parseInt(document.getElementById('c-prazo').value);
+
+            if(idEdit) {
+                const idx = db.clientes.findIndex(c => c.id == idEdit);
+                db.clientes[idx] = { ...db.clientes[idx], nome, prazo };
+            } else {
+                const client = {
+                    id: db.clientes.length > 0 ? Math.max(...db.clientes.map(c => c.id)) + 1 : 1001,
+                    nome, prazo
+                };
+                db.clientes.push(client);
+            }
             
-            clientes.push({ codigo, nome, prazo: parseInt(prazo) });
-            localStorage.setItem('clientes', JSON.stringify(clientes));
-            
+            saveDB();
+            renderClients();
             document.getElementById('form-cliente').reset();
-            renderClients();
-            alert(`Cliente ${nome} cadastrado com sucesso!`);
+            document.getElementById('c-id-edit').value = '';
+            document.getElementById('btn-cli-save').innerText = 'Cadastrar Cliente';
         }
-
-        function renderClients() {
-            const tbody = document.getElementById('clientes-table-body');
-            tbody.innerHTML = '';
-            clientes.forEach(c => {
-                tbody.innerHTML += `<tr><td>${c.codigo}</td><td>${c.nome}</td><td>${c.prazo} dias</td></tr>`;
-            });
-            updateClientSelect();
-        }
-
-        function updateClientSelect() {
-            const select = document.getElementById('v-cliente');
-            select.innerHTML = '<option value="">Selecione o Cliente...</option>';
-            clientes.forEach(c => {
-                select.innerHTML += `<option value="${c.codigo}">${c.codigo} - ${c.nome}</option>`;
-            });
-        }
-
-        // --- VENDAS ---
-        function openModal() {
-            if(clientes.length === 0) {
-                alert("Você precisa cadastrar pelo menos um cliente antes de fazer uma venda!");
-                navigate('clientes');
-                return;
-            }
-            document.getElementById('form-venda').reset();
-            document.getElementById('v-total-display').innerText = '0.00';
-            document.getElementById('v-cliente-info').innerText = '';
-            document.getElementById('div-cheque').classList.add('hidden');
-            
-            const today = new Date().toISOString().split('T')[0];
-            document.getElementById('filter-date-start').value = today;
-            document.getElementById('filter-date-end').value = today;
-
-            document.getElementById('modal-venda').style.display = 'flex';
-        }
-
-        function closeModal() {
-            document.getElementById('modal-venda').style.display = 'none';
-        }
-
-        function updateClientPrazoInfo() {
-            const cliId = parseInt(document.getElementById('v-cliente').value);
-            const cliente = clientes.find(c => c.codigo === cliId);
-            if(cliente) {
-                document.getElementById('v-cliente-info').innerText = `Prazo padrão: ${cliente.prazo} dias`;
-            } else {
-                document.getElementById('v-cliente-info').innerText = '';
-            }
-        }
-
-        function calcTotal() {
-            const qtd = parseFloat(document.getElementById('v-qtd').value) || 0;
-            const unit = parseFloat(document.getElementById('v-unit').value) || 0;
-            document.getElementById('v-total-display').innerText = (qtd * unit).toFixed(2);
-        }
-
-        function checkPaymentType() {
-            const pgto = document.getElementById('v-pagamento').value;
-            const divCheque = document.getElementById('div-cheque');
-            if(pgto === 'Cheque') {
-                divCheque.classList.remove('hidden');
-                document.getElementById('v-cheque-num').required = true;
-            } else {
-                divCheque.classList.add('hidden');
-                document.getElementById('v-cheque-num').required = false;
-            }
-        }
-
-        function saveSale(e) {
-            e.preventDefault();
-            const cliId = parseInt(document.getElementById('v-cliente').value);
-            const cliente = clientes.find(c => c.codigo === cliId);
-            const pgto = document.getElementById('v-pagamento').value;
-            
-            // Lógica de Prazo
-            let vencimento = null;
-            let status = 'Pago';
-            if (pgto === 'Prazo em Carteira') {
-                status = 'Pendente';
-                const dataAtual = new Date();
-                dataAtual.setDate(dataAtual.getDate() + cliente.prazo);
-                vencimento = dataAtual.toISOString().split('T')[0]; // Formato YYYY-MM-DD
-            }
-
-            const totalCalc = parseFloat(document.getElementById('v-qtd').value) * parseFloat(document.getElementById('v-unit').value);
-
-            const venda = {
-                id: vendas.length > 0 ? Math.max(...vendas.map(v => v.id)) + 1 : 1000,
-                data: new Date().toISOString().split('T')[0],
-                dataHoraInclusao: new Date().toLocaleString('pt-BR'),
-                vendedor: document.getElementById('v-vendedor').value,
-                tipo: document.getElementById('v-tipo').value,
-                clienteId: cliente.codigo,
-                clienteNome: cliente.nome,
-                clientePrazo: cliente.prazo,
-                prodCod: document.getElementById('v-prod-cod').value,
-                prodNome: document.getElementById('v-prod-nome').value,
-                qtd: document.getElementById('v-qtd').value,
-                unit: document.getElementById('v-unit').value,
-                total: totalCalc,
-                pagamento: pgto,
-                chequeNum: document.getElementById('v-cheque-num').value,
-                vencimento: vencimento,
-                status: status
-            };
-
-            vendas.push(venda);
-            localStorage.setItem('vendas', JSON.stringify(vendas));
-            
-            closeModal();
-            renderSales();
-            alert(`Venda Nº ${venda.id} finalizada com sucesso!`);
-        }
-
-        function renderSales() {
-            const tbody = document.getElementById('sales-table-body');
-            tbody.innerHTML = '';
-            
-            const searchCli = document.getElementById('filter-client').value.toLowerCase();
-            const searchId = document.getElementById('filter-sale-id').value;
-            const startStr = document.getElementById('filter-date-start').value;
-            const endStr = document.getElementById('filter-date-end').value;
-
-            // Filtra as vendas baseado no topo da página inicial
-            let vendasFiltradas = vendas.filter(v => {
-                let show = true;
-                if(searchId && v.id.toString() !== searchId) show = false;
-                if(searchCli && !v.clienteNome.toLowerCase().includes(searchCli) && v.clienteId.toString() !== searchCli) show = false;
-                
-                // Lógica simples de filtro de data
-                if(startStr && v.data < startStr) show = false;
-                if(endStr && v.data > endStr) show = false;
-
-                return show;
-            });
-
-            // Ordena as mais recentes primeiro
-            vendasFiltradas.reverse().forEach(v => {
-                const dataFormatada = v.data.split('-').reverse().join('/');
-                tbody.innerHTML += `
-                    <tr>
-                        <td><b>${v.id}</b></td>
-                        <td>${dataFormatada}</td>
-                        <td>${v.tipo}</td>
-                        <td>${v.clienteId}</td>
-                        <td>${v.clienteNome}</td>
-                        <td>${v.clientePrazo}</td>
-                        <td>${v.vendedor}</td>
-                        <td style="color: green; font-weight: bold;">R$ ${v.total.toFixed(2)}</td>
-                        <td>${v.pagamento} ${v.pagamento === 'Cheque' ? `(Nº ${v.chequeNum})` : ''}</td>
-                    </tr>
-                `;
-            });
-        }
-
-        // --- ACERTO DE CONTAS ---
-        function renderAcerto() {
-            const tbody = document.getElementById('acerto-table-body');
-            tbody.innerHTML = '';
-            
-            // Puxa apenas vendas feitas "A Prazo"
-            const vendasPrazo = vendas.filter(v => v.pagamento === 'Prazo em Carteira');
-            
-            if(vendasPrazo.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Nenhuma conta a prazo encontrada.</td></tr>';
-                return;
-            }
-
-            vendasPrazo.forEach(v => {
-                const dataFormatada = v.data.split('-').reverse().join('/');
-                const vencFormatado = v.vencimento ? v.vencimento.split('-').reverse().join('/') : '-';
-                const isAtrasado = new Date(v.vencimento) < new Date() && v.status === 'Pendente';
-
-                tbody.innerHTML += `
-                    <tr style="${v.status === 'Pago' ? 'opacity: 0.5; background: #f0fdf4;' : ''}">
-                        <td>${v.id}</td>
-                        <td>${v.clienteNome}</td>
-                        <td>${dataFormatada}</td>
-                        <td style="color: ${isAtrasado ? 'red' : 'inherit'}; font-weight: ${isAtrasado ? 'bold' : 'normal'}">${vencFormatado}</td>
-                        <td>R$ ${v.total.toFixed(2)}</td>
-                        <td><strong>${v.status}</strong></td>
-                        <td>
-                            ${v.status === 'Pendente' 
-                                ? `<button class="btn btn-success" onclick="baixarPagamento(${v.id})" style="padding: 0.2rem 0.5rem; font-size: 0.8rem;">Dar Baixa</button>` 
-                                : `✔ Baixado`
-                            }
-                        </td>
-                    </tr>
-                `;
-            });
-        }
-
-        function baixarPagamento(idVenda) {
-            if(confirm('Tem certeza que deseja dar baixa no pagamento desta venda?')) {
-                const index = vendas.findIndex(v => v.id === idVenda);
-                if(index !== -1) {
-                    vendas[index].status = 'Pago';
-                    localStorage.setItem('vendas', JSON.stringify(vendas));
-                    renderAcerto();
-                }
-            }
-        }
-
-        // Inicialização
-        window.onload = () => {
-            const today = new Date().toISOString().split('T')[0];
-            document.getElementById('filter-date-start').value = today;
-            document.getElementById('filter-date-end').value = today;
-            
-            renderClients();
-            renderSales();
-        };
-    </script>
-</body>
-</html>
