@@ -3,14 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Vendas Pro v8</title>
+    <title>Sistema de Vendas Pro v8.7 - Relatório de Acertos</title>
     <style>
         :root { --primary: #2563eb; --success: #10b981; --danger: #ef4444; --warning: #f59e0b; --bg: #f3f4f6; --text: #1f2937; --info: #0ea5e9; }
         body { font-family: 'Segoe UI', system-ui, sans-serif; margin: 0; background-color: var(--bg); color: var(--text); }
         
-        header { background: var(--primary); color: white; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; }
-        nav button { background: none; border: none; color: white; font-size: 0.9rem; cursor: pointer; margin-left: 0.5rem; padding: 0.6rem 1rem; border-radius: 6px; transition: 0.2s; }
+        header { background: var(--primary); color: white; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; flex-wrap: wrap; gap: 10px; }
+        nav { display: flex; flex-wrap: wrap; gap: 5px; }
+        nav button { background: none; border: none; color: white; font-size: 0.9rem; cursor: pointer; padding: 0.6rem 1rem; border-radius: 6px; transition: 0.2s; }
         nav button:hover { background: rgba(255,255,255,0.15); }
+        nav button.active-nav { background: rgba(255,255,255,0.25); font-weight: bold; }
         
         .container { padding: 1.5rem; max-width: 1300px; margin: 0 auto; }
         .page { display: none; }
@@ -23,7 +25,7 @@
 
         .card { background: white; padding: 1.5rem; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 1rem; }
         .form-row { display: flex; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap; align-items: flex-end; }
-        .form-group { flex: 1; display: flex; flex-direction: column; min-width: 150px; }
+        .form-group { flex: 1; display: flex; flex-direction: column; min-width: 120px; }
         label { margin-bottom: 0.4rem; font-weight: 600; font-size: 0.85rem; }
         input, select { padding: 0.6rem; border: 1px solid #d1d5db; border-radius: 6px; outline: none; }
         
@@ -33,7 +35,7 @@
         .btn-danger { background: var(--danger); color: white; }
         .btn-info { background: var(--info); color: white; }
         .btn-warning { background: var(--warning); color: white; }
-        .btn-ghost { background: #e5e7eb; color: var(--text); }
+        .btn-ghost { background: #e5e7eb; color: var(--text); border: 1px solid #d1d5db; }
         .btn-outline { border: 1px solid var(--primary); color: var(--primary); background: transparent; }
         .btn-outline.active { background: var(--primary); color: white; }
 
@@ -51,24 +53,45 @@
         .cart-table th, .cart-table td { padding: 0.5rem; font-size: 0.85rem; border-bottom: 1px solid #e5e7eb; }
         .cart-table { margin-top: 1rem; border: 1px solid #e5e7eb; }
 
+        .report-table { width: 100%; border-collapse: collapse; font-family: 'Courier New', Courier, monospace; font-size: 13px; }
+        .report-table th, .report-table td { padding: 4px 8px; border: none; }
+        .report-header-row { border-top: 1px solid #000; border-bottom: 1px solid #ddd; background: #fdfdfd; }
+        .report-item-header { font-weight: bold; border-bottom: 1px solid #eee; }
+        .report-footer { border-top: 2px solid #000; font-weight: bold; font-size: 14px; margin-top: 10px; }
+
+        @media screen {
+            #receipt-print { display: none; }
+        }
+
         @media print {
             body * { visibility: hidden; }
+            .no-print { display: none !important; }
             #receipt-print, #receipt-print * { visibility: visible; }
-            #receipt-print { position: absolute; left: 0; top: 0; width: 80mm; padding: 5mm; color: black; }
+            #receipt-print { 
+                display: block !important; 
+                position: absolute; 
+                left: 0; 
+                top: 0; 
+                width: 80mm; /* Mantém o padrão térmico, mas alteramos via JS para A4 nos relatórios */
+                padding: 2mm; 
+                color: black; 
+                background: white; 
+                font-family: 'Courier New', Courier, monospace; 
+                font-size: 12px; 
+            }
         }
-        #receipt-print { display: none; font-family: 'Courier New', monospace; font-size: 12px; }
-        .hidden { display: none !important; }
     </style>
 </head>
 <body>
 
     <header class="no-print">
-        <h2 style="margin:0">PDV ESPAÇO QUINZE</h2>
+        <h2 style="margin:0">🚀 VendaFlow Pro</h2>
         <nav>
-            <button onclick="navigate('home')">Início/Vendas</button>
-            <button onclick="navigate('produtos')">Produtos</button>
-            <button onclick="navigate('clientes')">Clientes</button>
-            <button onclick="navigate('acerto')">Acerto de Contas</button>
+            <button id="nav-home" onclick="navigate('home')">Início/Vendas</button>
+            <button id="nav-produtos" onclick="navigate('produtos')">Produtos</button>
+            <button id="nav-clientes" onclick="navigate('clientes')">Clientes</button>
+            <button id="nav-vendedores" onclick="navigate('vendedores')">Vendedores</button>
+            <button id="nav-acerto" onclick="navigate('acerto')">Acerto de Contas</button>
         </nav>
     </header>
 
@@ -84,7 +107,8 @@
             <div class="card">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 10px;">
                     <h3 style="margin:0">Vendas</h3>
-                    <div style="display:flex; gap: 10px;">
+                    <div style="display:flex; gap: 10px; flex-wrap: wrap;">
+                        <button class="btn btn-ghost" onclick="abrirModalImpressaoAgrupada()">🖨️ Relatório em Lote</button>
                         <button id="btn-toggle-canceladas" class="btn btn-outline" onclick="toggleCanceladas()">Ver Canceladas</button>
                         <button class="btn btn-success" onclick="openSaleModal()">+ Nova Venda (F1)</button>
                     </div>
@@ -92,11 +116,41 @@
                 <div class="form-row">
                     <div class="form-group"><label>De:</label><input type="date" id="f-inicio" onchange="renderSales()"></div>
                     <div class="form-group"><label>Até:</label><input type="date" id="f-fim" onchange="renderSales()"></div>
+                    <div class="form-group">
+                        <label>Vendedor:</label>
+                        <select id="f-vendedor" onchange="renderSales()">
+                            <option value="">Todos</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Pagamento:</label>
+                        <select id="f-pgto" onchange="renderSales()">
+                            <option value="">Todos</option>
+                            <option value="Dinheiro">Dinheiro</option>
+                            <option value="PIX">PIX</option>
+                            <option value="Cartão">Cartão</option>
+                            <option value="Prazo em Carteira">Prazo</option>
+                            <option value="Cheque">Cheque</option>
+                        </select>
+                    </div>
                     <div class="form-group"><label>Pesquisar:</label><input type="text" id="f-busca" placeholder="Cliente ou Nº" onkeyup="renderSales()"></div>
                 </div>
                 <div style="overflow-x: auto;">
                     <table>
-                        <thead><tr><th>Nº</th><th>Data/Hora</th><th>Cliente</th><th>Total</th><th>Pagamento</th><th>Status</th><th>Ações</th></tr></thead>
+                        <thead>
+                            <tr>
+                                <th style="width: 40px; text-align: center;"><input type="checkbox" id="check-all-vendas" onclick="toggleTodasVendas(this)"></th>
+                                <th>Nº</th>
+                                <th>Data/Hora</th>
+                                <th>Cliente</th>
+                                <th>Vendedor</th>
+                                <th>Total</th>
+                                <th>Pagamento</th>
+                                <th>Status</th>
+                                <th style="text-align: center;">Imprimir Cupom</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
                         <tbody id="sales-table-body"></tbody>
                     </table>
                 </div>
@@ -134,18 +188,42 @@
             <div class="card"><table><thead><tr><th>Código</th><th>Nome</th><th>Prazo</th><th>Ações</th></tr></thead><tbody id="cli-table-body"></tbody></table></div>
         </section>
 
+        <section id="vendedores" class="page">
+            <div class="card">
+                <h3>Cadastro de Vendedores</h3>
+                <form id="form-vendedor" onsubmit="saveVendedor(event)">
+                    <input type="hidden" id="vend-id-edit">
+                    <div class="form-row">
+                        <div class="form-group" style="flex:2"><label>Nome do Vendedor</label><input type="text" id="vend-nome" required></div>
+                        <div class="form-group" style="justify-content: flex-end;"><button type="submit" class="btn btn-primary" id="btn-vend-save">Salvar Vendedor</button></div>
+                    </div>
+                </form>
+            </div>
+            <div class="card"><table><thead><tr><th>Código</th><th>Nome</th><th>Ações</th></tr></thead><tbody id="vend-table-body"></tbody></table></div>
+        </section>
+
         <section id="acerto" class="page">
             <div class="card">
-                <h3>Acerto de Contas (Fiado)</h3>
-                <p style="font-size: 0.85rem; color: #666; margin-bottom: 1.5rem;">Gerencie todas as vendas feitas "A Prazo em Carteira".</p>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 10px;">
+                    <div>
+                        <h3 style="margin:0">Acerto de Contas (Fiado)</h3>
+                        <p style="font-size: 0.85rem; color: #666; margin-top: 5px; margin-bottom: 0;">Gerencie todas as vendas feitas "A Prazo em Carteira".</p>
+                    </div>
+                    <button class="btn btn-ghost" onclick="imprimirRelatorioAcerto()">🖨️ Imprimir Relatório A4</button>
+                </div>
                 
+                <div class="form-row" style="background: #f8fafc; padding: 1rem; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 1.5rem;">
+                    <div class="form-group"><label>Vencimento De:</label><input type="date" id="f-acerto-inicio" onchange="renderAcerto()"></div>
+                    <div class="form-group"><label>Até:</label><input type="date" id="f-acerto-fim" onchange="renderAcerto()"></div>
+                    <div class="form-group" style="flex:2"><label>Pesquisar Cliente:</label><input type="text" id="f-acerto-busca" placeholder="Digite o nome..." onkeyup="renderAcerto()"></div>
+                </div>
+
                 <div style="display: flex; gap: 10px; margin-bottom: 1.5rem; flex-wrap: wrap;">
                     <button class="btn btn-outline active" onclick="setFiltroAcerto('Todos')" id="f-acerto-Todos">Todos</button>
                     <button class="btn btn-outline" onclick="setFiltroAcerto('A Vencer')" id="f-acerto-A Vencer">A Vencer</button>
                     <button class="btn btn-outline" onclick="setFiltroAcerto('Vencidos')" id="f-acerto-Vencidos">Vencidos</button>
                     <button class="btn btn-outline" onclick="setFiltroAcerto('Pagas')" id="f-acerto-Pagas">Pagas (Baixadas)</button>
                 </div>
-
                 <div style="overflow-x: auto;">
                     <table>
                         <thead><tr><th>Venda</th><th>Cliente</th><th>Vencimento</th><th>Valor Total</th><th>Status</th><th>Ação / Baixa</th></tr></thead>
@@ -164,9 +242,11 @@
             </div>
             <form id="form-venda" onsubmit="executeSale(event)">
                 <input type="hidden" id="v-id-edit">
-                
                 <div class="form-row">
-                    <div class="form-group"><label>Vendedor</label><input type="text" id="v-vendedor" required></div>
+                    <div class="form-group">
+                        <label>Vendedor</label>
+                        <select id="v-vendedor" required></select>
+                    </div>
                     <div class="form-group"><label>Tipo</label><select id="v-tipo"><option value="Venda">Venda</option><option value="Reposição">Reposição</option></select></div>
                     <div class="form-group" style="flex:2"><label>Cliente</label><select id="v-cliente" required></select></div>
                 </div>
@@ -186,20 +266,14 @@
                             <button type="button" class="btn btn-primary" onclick="adicionarAoCarrinho()">+ Adicionar</button>
                         </div>
                     </div>
-
                     <table class="cart-table" id="tabela-carrinho" style="display: none;">
                         <thead style="background: white;">
-                            <tr>
-                                <th>Produto</th>
-                                <th>Qtd</th>
-                                <th>Valor Unit.</th>
-                                <th>Total Item</th>
-                                <th style="text-align: center;">Excluir</th>
-                            </tr>
+                            <tr><th>Produto</th><th>Qtd</th><th>Valor Unit.</th><th>Total Item</th><th style="text-align: center;">Excluir</th></tr>
                         </thead>
                         <tbody id="cart-table-body" style="background: white;"></tbody>
                     </table>
                 </div>
+
                 <div class="form-row">
                     <div class="form-group"><label>Acréscimo R$</label><input type="number" step="0.01" id="v-acres" value="0" oninput="atualizarTotalTela()"></div>
                     <div class="form-group"><label>Desconto R$</label><input type="number" step="0.01" id="v-desc" value="0" oninput="atualizarTotalTela()"></div>
@@ -217,6 +291,21 @@
         </div>
     </div>
 
+    <div class="modal-overlay" id="modal-impressao-agrupada">
+        <div class="modal" style="max-width: 1000px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem">
+                <h2 style="margin:0">Pré-visualização do Relatório</h2>
+                <div>
+                    <button class="btn btn-ghost" onclick="fecharModalImpressaoAgrupada()" style="margin-right: 10px;">Cancelar</button>
+                    <button class="btn btn-primary" onclick="confirmarImpressaoAgrupada()">🖨️ Imprimir em A4</button>
+                </div>
+            </div>
+            <p style="color: #666; font-size: 0.85rem; margin-top:0;">*Este relatório será impresso usando toda a largura da página.</p>
+            <div id="preview-relatorio-agrupado" style="border: 1px solid #ccc; padding: 20px; background: white; max-height: 60vh; overflow-y: auto;">
+            </div>
+        </div>
+    </div>
+
     <div id="receipt-print"></div>
 
     <script>
@@ -227,24 +316,55 @@
         let db = { 
             clientes: JSON.parse(localStorage.getItem('db_clientes')) || [], 
             produtos: JSON.parse(localStorage.getItem('db_produtos')) || [], 
-            vendas: JSON.parse(localStorage.getItem('db_vendas')) || [] 
+            vendas: JSON.parse(localStorage.getItem('db_vendas')) || [],
+            vendedores: JSON.parse(localStorage.getItem('db_vendedores')) || []
         };
 
         function saveDB() {
             localStorage.setItem('db_clientes', JSON.stringify(db.clientes));
             localStorage.setItem('db_produtos', JSON.stringify(db.produtos));
             localStorage.setItem('db_vendas', JSON.stringify(db.vendas));
+            localStorage.setItem('db_vendedores', JSON.stringify(db.vendedores));
             updateDashboard();
         }
 
         function navigate(page) {
             document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
             document.getElementById(page).classList.add('active');
+            
+            document.querySelectorAll('nav button').forEach(b => b.classList.remove('active-nav'));
+            document.getElementById(`nav-${page}`).classList.add('active-nav');
+
             if(page === 'home') renderSales();
             if(page === 'produtos') renderProducts();
             if(page === 'clientes') renderClients();
+            if(page === 'vendedores') renderVendedores();
             if(page === 'acerto') renderAcerto();
         }
+
+        // --- LÓGICA DE VENDEDORES ---
+        function saveVendedor(e) {
+            e.preventDefault();
+            const idEdit = document.getElementById('vend-id-edit').value;
+            const vNome = document.getElementById('vend-nome').value;
+            if (idEdit) {
+                const idx = db.vendedores.findIndex(v => v.id == idEdit);
+                if (idx > -1) { db.vendedores[idx] = { ...db.vendedores[idx], nome: vNome }; alert("Vendedor atualizado!"); }
+            } else { db.vendedores.push({ id: Date.now(), nome: vNome }); }
+            saveDB(); renderVendedores(); e.target.reset(); document.getElementById('vend-id-edit').value = ''; document.getElementById('btn-vend-save').innerText = 'Salvar Vendedor';
+        }
+        function editVendedor(id) {
+            const v = db.vendedores.find(v => v.id === id); if (!v) return;
+            document.getElementById('vend-id-edit').value = v.id; document.getElementById('vend-nome').value = v.nome; document.getElementById('btn-vend-save').innerText = 'Atualizar Vendedor'; window.scrollTo(0,0);
+        }
+        function renderVendedores() { 
+            document.getElementById('vend-table-body').innerHTML = db.vendedores.map(v => `<tr><td>#${v.id}</td><td>${v.nome}</td><td><button class="btn btn-info" onclick="editVendedor(${v.id})" style="padding:4px">✏️</button> <button class="btn btn-danger" onclick="deleteVendedor(${v.id})" style="padding:4px">X</button></td></tr>`).join('');
+            const options = '<option value="">Selecione...</option>' + db.vendedores.map(v => `<option value="${v.nome}">${v.nome}</option>`).join('');
+            const filterOptions = '<option value="">Todos</option>' + db.vendedores.map(v => `<option value="${v.nome}">${v.nome}</option>`).join('');
+            document.getElementById('v-vendedor').innerHTML = options;
+            document.getElementById('f-vendedor').innerHTML = filterOptions;
+        }
+        function deleteVendedor(id) { if(confirm('Excluir vendedor?')) { db.vendedores = db.vendedores.filter(v => v.id !== id); saveDB(); renderVendedores(); } }
 
         // --- LÓGICA DE PRODUTOS E CLIENTES ---
         function saveProduct(e) {
@@ -299,45 +419,197 @@
             renderSales();
         }
 
+        function toggleTodasVendas(source) {
+            const checkboxes = document.querySelectorAll('.check-venda');
+            checkboxes.forEach(cb => cb.checked = source.checked);
+        }
+
         function renderSales() {
             const tbody = document.getElementById('sales-table-body');
             const busca = document.getElementById('f-busca').value.toLowerCase();
             const inicio = document.getElementById('f-inicio').value;
             const fim = document.getElementById('f-fim').value;
+            const filtroVendedor = document.getElementById('f-vendedor').value;
+            const filtroPgto = document.getElementById('f-pgto').value;
+            
+            document.getElementById('check-all-vendas').checked = false; 
 
             let filtradas = db.vendas.filter(v => {
                 const dataV = v.data.split('T')[0];
                 const matchBusca = v.cliente.toLowerCase().includes(busca) || v.id.toString().includes(busca);
                 const matchData = (!inicio || dataV >= inicio) && (!fim || dataV <= fim);
+                
+                if (filtroVendedor && v.vendedor !== filtroVendedor) return false;
+                if (filtroPgto && !v.pagamento.includes(filtroPgto)) return false;
                 if (!verCanceladasGlobal && v.status === 'Cancelada') return false;
                 if (verCanceladasGlobal && v.status !== 'Cancelada') return false;
+                
                 return matchBusca && matchData;
             }).reverse();
 
             tbody.innerHTML = filtradas.map(v => `
                 <tr style="${v.status === 'Cancelada' ? 'background: #fff5f5' : ''}">
+                    <td style="text-align: center;"><input type="checkbox" class="check-venda" value="${v.id}"></td>
                     <td>#${v.id}</td>
                     <td>${new Date(v.data).toLocaleString('pt-BR')}</td>
                     <td>${v.cliente}</td>
+                    <td>${v.vendedor || '-'}</td>
                     <td><b>R$ ${v.total.toFixed(2)}</b></td>
                     <td>${v.pagamento}</td>
                     <td><span class="badge ${v.status === 'Ativa' ? 'badge-success' : 'badge-danger'}">${v.status}</span></td>
+                    <td style="text-align: center; white-space: nowrap;">
+                        <button class="btn btn-ghost" onclick="printReceipt(${v.id}, 'cliente')" style="padding:4px 8px; font-size:1.1rem;" title="Via do Cliente (Com Preço)">🖨️👤</button>
+                        <button class="btn btn-ghost" onclick="printReceipt(${v.id}, 'carregador')" style="padding:4px 8px; font-size:1.1rem;" title="Via do Carregador (Sem Preço)">🖨️📦</button>
+                    </td>
                     <td>
-                        <button class="btn btn-ghost" onclick="printReceipt(${v.id})" title="Imprimir">🖨️</button>
                         ${v.status === 'Ativa' ? `<button class="btn btn-info" onclick="editSale(${v.id})" style="padding:4px" title="Editar">✏️</button>` : ''}
                         ${v.status === 'Ativa' ? `<button class="btn btn-danger" onclick="cancelSale(${v.id})" style="padding:4px" title="Cancelar">X</button>` : ''}
                     </td>
                 </tr>
             `).join('');
-            updateDashboard();
+            
+            updateDashboard(filtradas);
         }
 
-        function updateDashboard() {
+        function updateDashboard(vendasAtuais = null) {
+            const baseVendas = vendasAtuais || db.vendas;
             const hoje = new Date().toISOString().split('T')[0];
-            const tHoje = db.vendas.filter(v => v.data.startsWith(hoje) && v.status === 'Ativa').reduce((acc, v) => acc + v.total, 0);
-            const tPendente = db.vendas.filter(v => (v.pagamento === 'Prazo em Carteira' || (v.vencimento !== null && !v.pagamento.includes('Acertado'))) && v.status === 'Ativa').reduce((acc, v) => acc + v.total, 0);
+            const mesAtual = hoje.substring(0, 7);
+            
+            const tHoje = baseVendas.filter(v => v.data.startsWith(hoje) && v.status === 'Ativa').reduce((acc, v) => acc + v.total, 0);
+            const tMes = baseVendas.filter(v => v.data.startsWith(mesAtual) && v.status === 'Ativa').reduce((acc, v) => acc + v.total, 0);
+            const tPendente = baseVendas.filter(v => (v.pagamento === 'Prazo em Carteira' || (v.vencimento !== null && !v.pagamento.includes('Acertado'))) && v.status === 'Ativa').reduce((acc, v) => acc + v.total, 0);
+            
             document.getElementById('dash-hoje').innerText = `R$ ${tHoje.toFixed(2)}`;
+            document.getElementById('dash-mes').innerText = `R$ ${tMes.toFixed(2)}`;
             document.getElementById('dash-pendente').innerText = `R$ ${tPendente.toFixed(2)}`;
+        }
+
+        // --- LÓGICA DE IMPRESSÃO (CUPOM TÉRMICO E RELATÓRIO) ---
+        
+        function printReceipt(id, tipo) {
+            const v = db.vendas.find(v => v.id === id);
+            if(v) printReceiptObject(v, tipo);
+        }
+
+        function printReceiptObject(v, tipo = 'cliente') {
+            document.getElementById('receipt-print').style.width = '80mm';
+
+            let listaProdutosHtml = "";
+            
+            if (tipo === 'cliente') {
+                if(v.carrinho && v.carrinho.length > 0) {
+                    listaProdutosHtml = v.carrinho.map(item => `${item.nome}<br>Qtd: ${item.qtd} x R$ ${item.unit.toFixed(2)} = R$ ${item.totalItem.toFixed(2)}`).join('<br><br>');
+                } else { listaProdutosHtml = v.itens; }
+            } else {
+                if(v.carrinho && v.carrinho.length > 0) {
+                    listaProdutosHtml = v.carrinho.map(item => `<b>[  ] ${item.qtd}x</b> - ${item.nome}`).join('<br><br>');
+                } else { listaProdutosHtml = v.itens; }
+            }
+
+            let html = `
+                <div style="text-align:center">
+                    <h3 style="margin:0">${tipo === 'cliente' ? 'RECIBO DO CLIENTE' : 'ORDEM DE SEPARACAO'}</h3>
+                    <p style="margin:5px 0">Pedido Nº: ${v.id}</p>
+                    <hr style="border-top:1px dashed #000; border-bottom:none;">
+                </div>
+                <p style="margin:5px 0">Data: ${new Date(v.data).toLocaleString('pt-BR')}</p>
+                <p style="margin:5px 0">Cliente: ${v.cliente}</p>
+                <p style="margin:5px 0">Vendedor: ${v.vendedor || '-'}</p>
+                <hr style="border-top:1px dashed #000; border-bottom:none;">
+                <p style="margin:5px 0"><b>ITENS:</b><br><br>${listaProdutosHtml}</p>
+                <hr style="border-top:1px dashed #000; border-bottom:none;">
+            `;
+
+            if (tipo === 'cliente') {
+                if (v.acres > 0) html += `<p style="margin:5px 0">Acrescimo: R$ ${parseFloat(v.acres).toFixed(2)}</p>`;
+                if (v.desc > 0) html += `<p style="margin:5px 0">Desconto: R$ ${parseFloat(v.desc).toFixed(2)}</p>`;
+                html += `
+                    <h4 style="margin:10px 0; font-size:1.2em;">TOTAL: R$ ${v.total.toFixed(2)}</h4>
+                    <p style="margin:5px 0">Pgto: ${v.pagamento}</p>
+                    <p style="margin:20px 0 5px 0; text-align:center;"><em>Obrigado pela preferencia!</em></p>
+                `;
+            } else {
+                html += `
+                    <br><br><br>
+                    <p style="margin:5px 0; text-align:center;"><em>Assinatura do Conferente:</em></p>
+                    <p style="text-align:center;">___________________________</p>
+                `;
+            }
+
+            document.getElementById('receipt-print').innerHTML = html;
+            window.print();
+        }
+
+        // --- RELATÓRIO AGRUPADO EM LOTE DE VENDAS (A4) ---
+        function abrirModalImpressaoAgrupada() {
+            const checks = document.querySelectorAll('.check-venda:checked');
+            if (checks.length === 0) return alert("Selecione pelo menos uma venda.");
+
+            const idsSelecionados = Array.from(checks).map(cb => parseInt(cb.value));
+            const vendasParaImprimir = db.vendas.filter(v => idsSelecionados.includes(v.id));
+            const htmlRelatorio = gerarHTMLRelatorioAgrupado(vendasParaImprimir);
+            
+            document.getElementById('preview-relatorio-agrupado').innerHTML = htmlRelatorio;
+            document.getElementById('modal-impressao-agrupada').style.display = 'flex';
+        }
+
+        function fecharModalImpressaoAgrupada() { document.getElementById('modal-impressao-agrupada').style.display = 'none'; }
+        
+        function confirmarImpressaoAgrupada() {
+            document.getElementById('receipt-print').style.width = '100%';
+            const htmlRelatorio = document.getElementById('preview-relatorio-agrupado').innerHTML;
+            document.getElementById('receipt-print').innerHTML = htmlRelatorio;
+            window.print();
+            
+            setTimeout(() => { document.getElementById('receipt-print').style.width = '80mm'; }, 500);
+        }
+
+        function gerarHTMLRelatorioAgrupado(vendas) {
+            let html = '<table class="report-table"><tbody>';
+            let totalGeral = 0;
+
+            vendas.forEach(v => {
+                totalGeral += v.total;
+                const dataFormatada = new Date(v.data).toLocaleDateString('pt-BR');
+                const clienteFormatado = `${v.clienteId || '0'} - ${v.cliente}`;
+
+                html += `
+                    <tr class="report-header-row">
+                        <td colspan="2"><b>${v.id} &nbsp;&nbsp;&nbsp; ${v.vendedor || ''} &nbsp; ${dataFormatada}</b></td>
+                        <td colspan="2"><b>${clienteFormatado.toUpperCase()}</b></td>
+                        <td style="text-align: right;"><b>${v.total.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</b></td>
+                    </tr>
+                    <tr class="report-item-header">
+                        <td style="width: 5%; text-align:center;">Item</td>
+                        <td style="width: 45%;">Produto</td>
+                        <td style="width: 15%; text-align:right;">Quantidade</td>
+                        <td style="width: 15%; text-align:right;">Valor</td>
+                        <td style="width: 20%; text-align:right;">Total</td>
+                    </tr>
+                `;
+
+                if (v.carrinho && v.carrinho.length > 0) {
+                    v.carrinho.forEach((item, idx) => {
+                        const qtdFmt = item.qtd.toLocaleString('pt-BR', {minimumFractionDigits: 3, maximumFractionDigits: 3});
+                        const unitFmt = item.unit.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                        const totalItemFmt = item.totalItem.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                        html += `<tr><td style="text-align:center;">${idx + 1}</td><td>${item.prodId || '0'} - ${item.nome.toUpperCase()}</td><td style="text-align:right;">${qtdFmt}</td><td style="text-align:right;">${unitFmt}</td><td style="text-align:right;">${totalItemFmt}</td></tr>`;
+                    });
+                } else { html += `<tr><td style="text-align:center;">1</td><td colspan="4">${v.itens}</td></tr>`; }
+                
+                html += `<tr><td colspan="5" style="padding-bottom: 10px;"></td></tr>`;
+            });
+
+            html += `
+                <tr class="report-footer">
+                    <td colspan="3"></td>
+                    <td style="text-align: right;">Nº Vendas: &nbsp;&nbsp; ${vendas.length} &nbsp;&nbsp;&nbsp;&nbsp; Total:</td>
+                    <td style="text-align: right;">${totalGeral.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                </tr>
+            `;
+            html += '</tbody></table>';
+            return html;
         }
 
         // --- ACERTO DE CONTAS ---
@@ -351,20 +623,31 @@
         function renderAcerto() {
             const tbody = document.getElementById('acerto-table-body');
             const hoje = new Date().toISOString().split('T')[0];
+            
+            const busca = (document.getElementById('f-acerto-busca')?.value || '').toLowerCase();
+            const inicio = document.getElementById('f-acerto-inicio')?.value;
+            const fim = document.getElementById('f-acerto-fim')?.value;
+
             let contas = db.vendas.filter(v => v.vencimento !== null && v.status === 'Ativa');
 
             contas = contas.filter(v => {
                 const isPago = v.pagamento.includes('Acertado');
                 const isVencido = !isPago && v.vencimento < hoje;
                 const isAVencer = !isPago && v.vencimento >= hoje;
-                if (filtroAcertoAtual === 'Pagas') return isPago;
-                if (filtroAcertoAtual === 'Vencidos') return isVencido;
-                if (filtroAcertoAtual === 'A Vencer') return isAVencer;
+                
+                if (filtroAcertoAtual === 'Pagas' && !isPago) return false;
+                if (filtroAcertoAtual === 'Vencidos' && !isVencido) return false;
+                if (filtroAcertoAtual === 'A Vencer' && !isAVencer) return false;
+                if (busca && !v.cliente.toLowerCase().includes(busca)) return false;
+                if (inicio && v.vencimento < inicio) return false;
+                if (fim && v.vencimento > fim) return false;
+
                 return true;
             });
+
             contas.sort((a, b) => new Date(a.vencimento) - new Date(b.vencimento));
 
-            if(contas.length === 0) { tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding: 2rem; color: #666;">Nenhuma conta encontrada.</td></tr>`; return; }
+            if(contas.length === 0) { tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding: 2rem; color: #666;">Nenhuma conta encontrada com estes filtros.</td></tr>`; return; }
 
             tbody.innerHTML = contas.map(v => {
                 const isPago = v.pagamento.includes('Acertado');
@@ -386,6 +669,92 @@
             }
         }
 
+        // --- NOVO: IMPRIMIR RELATÓRIO DO ACERTO ---
+        function imprimirRelatorioAcerto() {
+            const hoje = new Date().toISOString().split('T')[0];
+            const busca = (document.getElementById('f-acerto-busca')?.value || '').toLowerCase();
+            const inicio = document.getElementById('f-acerto-inicio')?.value;
+            const fim = document.getElementById('f-acerto-fim')?.value;
+
+            let contas = db.vendas.filter(v => v.vencimento !== null && v.status === 'Ativa');
+
+            // Refaz o filtro para pegar exatamente o que está na tela
+            contas = contas.filter(v => {
+                const isPago = v.pagamento.includes('Acertado');
+                const isVencido = !isPago && v.vencimento < hoje;
+                const isAVencer = !isPago && v.vencimento >= hoje;
+                
+                if (filtroAcertoAtual === 'Pagas' && !isPago) return false;
+                if (filtroAcertoAtual === 'Vencidos' && !isVencido) return false;
+                if (filtroAcertoAtual === 'A Vencer' && !isAVencer) return false;
+                if (busca && !v.cliente.toLowerCase().includes(busca)) return false;
+                if (inicio && v.vencimento < inicio) return false;
+                if (fim && v.vencimento > fim) return false;
+
+                return true;
+            });
+
+            contas.sort((a, b) => new Date(a.vencimento) - new Date(b.vencimento));
+
+            if (contas.length === 0) return alert("Nenhuma conta para imprimir com os filtros atuais.");
+
+            // Gera o HTML do relatório em A4
+            let html = `
+                <div style="text-align: center; margin-bottom: 20px; font-family: sans-serif;">
+                    <h2>RELATÓRIO DE ACERTO DE CONTAS</h2>
+                    <p style="margin: 5px 0;">Filtro de Status: <b>${filtroAcertoAtual}</b></p>
+                    ${inicio || fim ? `<p style="margin: 5px 0;">Período Vencimento: ${inicio ? inicio.split('-').reverse().join('/') : 'Início'} até ${fim ? fim.split('-').reverse().join('/') : 'Fim'}</p>` : ''}
+                    ${busca ? `<p style="margin: 5px 0;">Cliente Pesquisado: <b>${busca.toUpperCase()}</b></p>` : ''}
+                    <hr style="margin-top: 15px;">
+                </div>
+                <table style="width: 100%; border-collapse: collapse; font-family: sans-serif; font-size: 14px;">
+                    <thead>
+                        <tr style="border-bottom: 2px solid #000; text-align: left; background: #f9f9f9;">
+                            <th style="padding: 10px;">Venda</th>
+                            <th style="padding: 10px;">Cliente</th>
+                            <th style="padding: 10px;">Vencimento</th>
+                            <th style="padding: 10px;">Status</th>
+                            <th style="padding: 10px; text-align: right;">Valor Total (R$)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            let total = 0;
+            contas.forEach(v => {
+                total += v.total;
+                const isPago = v.pagamento.includes('Acertado');
+                const isVencido = !isPago && v.vencimento < hoje;
+                let statusTxt = isPago ? 'PAGO' : (isVencido ? 'VENCIDO' : 'A VENCER');
+                
+                html += `
+                    <tr style="border-bottom: 1px solid #ccc;">
+                        <td style="padding: 10px;">#${v.id}</td>
+                        <td style="padding: 10px;">${v.cliente}</td>
+                        <td style="padding: 10px;">${v.vencimento.split('-').reverse().join('/')}</td>
+                        <td style="padding: 10px;">${statusTxt}</td>
+                        <td style="padding: 10px; text-align: right;">${v.total.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                    </tr>
+                `;
+            });
+
+            html += `
+                    </tbody>
+                </table>
+                <div style="margin-top: 20px; text-align: right; font-size: 1.2rem; font-family: sans-serif;">
+                    <b>Total Listado: R$ ${total.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</b>
+                </div>
+            `;
+
+            // Força largura de A4
+            document.getElementById('receipt-print').style.width = '100%';
+            document.getElementById('receipt-print').innerHTML = html;
+            window.print();
+            
+            // Retorna para largura de bobina térmica
+            setTimeout(() => { document.getElementById('receipt-print').style.width = '80mm'; }, 500);
+        }
+
         // --- LÓGICA DO CARRINHO DE COMPRAS E MODAL DE VENDA ---
         function autoFillProduct() { 
             const p = db.produtos.find(p => p.id == document.getElementById('v-prod-select').value); 
@@ -399,31 +768,17 @@
             if(!prodId) return alert('Selecione um produto para adicionar!');
             
             const p = db.produtos.find(p => p.id == prodId);
-            
-            // Note que estamos usando vírgula caso o usuário digite com vírgula, trocamos por ponto
             let qtdInput = document.getElementById('v-qtd').value.replace(',', '.');
             const qtd = parseFloat(qtdInput) || 1;
             const unit = parseFloat(document.getElementById('v-unit').value) || 0;
             
-            carrinhoAtual.push({
-                prodId: p.id,
-                nome: p.nome,
-                qtd: qtd,
-                unit: unit,
-                totalItem: qtd * unit
-            });
+            carrinhoAtual.push({ prodId: p.id, nome: p.nome, qtd: qtd, unit: unit, totalItem: qtd * unit });
 
-            document.getElementById('v-prod-select').value = "";
-            document.getElementById('v-qtd').value = "1";
-            document.getElementById('v-unit').value = "";
-            
+            document.getElementById('v-prod-select').value = ""; document.getElementById('v-qtd').value = "1"; document.getElementById('v-unit').value = "";
             renderizarCarrinhoNaTela();
         }
 
-        function removerDoCarrinho(index) {
-            carrinhoAtual.splice(index, 1);
-            renderizarCarrinhoNaTela();
-        }
+        function removerDoCarrinho(index) { carrinhoAtual.splice(index, 1); renderizarCarrinhoNaTela(); }
 
         function renderizarCarrinhoNaTela() {
             const tbody = document.getElementById('cart-table-body');
@@ -435,10 +790,7 @@
                 tabelaContainer.style.display = 'table';
                 tbody.innerHTML = carrinhoAtual.map((item, i) => `
                     <tr>
-                        <td><b>${item.nome}</b></td>
-                        <td>${item.qtd}</td>
-                        <td>R$ ${item.unit.toFixed(2)}</td>
-                        <td>R$ ${item.totalItem.toFixed(2)}</td>
+                        <td><b>${item.nome}</b></td><td>${item.qtd}</td><td>R$ ${item.unit.toFixed(2)}</td><td>R$ ${item.totalItem.toFixed(2)}</td>
                         <td style="text-align: center;"><button type="button" onclick="removerDoCarrinho(${i})" style="color:var(--danger); background:none; border:none; cursor:pointer; font-weight:bold; font-size:1rem;" title="Remover">X</button></td>
                     </tr>
                 `).join('');
@@ -450,22 +802,21 @@
             const somaCarrinho = carrinhoAtual.reduce((acc, item) => acc + item.totalItem, 0);
             const acres = parseFloat(document.getElementById('v-acres').value) || 0;
             const desc = parseFloat(document.getElementById('v-desc').value) || 0;
-            
             const totalGeral = somaCarrinho + acres - desc;
             document.getElementById('v-total-txt').innerText = totalGeral.toFixed(2); 
             return totalGeral; 
         }
 
         function openSaleModal() { 
+            if(db.vendedores.length === 0) return alert('Cadastre pelo menos 1 vendedor primeiro na aba "Vendedores"!');
             if(db.produtos.length === 0 || db.clientes.length === 0) return alert('Cadastre produto e cliente!'); 
+            
             document.getElementById('form-venda').reset(); 
             document.getElementById('v-id-edit').value = ''; 
             document.getElementById('modal-title-venda').innerText = "Nova Venda"; 
             document.getElementById('btn-save-venda').innerText = "FINALIZAR NOVA VENDA"; 
             
-            carrinhoAtual = [];
-            renderizarCarrinhoNaTela();
-            
+            carrinhoAtual = []; renderizarCarrinhoNaTela();
             document.getElementById('modal-venda').style.display = 'flex'; 
         }
 
@@ -479,24 +830,13 @@
             document.getElementById('v-desc').value = v.desc || 0; 
             document.getElementById('v-pgto').value = v.pagamento || 'Dinheiro';
             
-            if (v.carrinho && v.carrinho.length > 0) {
-                carrinhoAtual = JSON.parse(JSON.stringify(v.carrinho));
-            } else if (v.prodId) {
+            if (v.carrinho && v.carrinho.length > 0) { carrinhoAtual = JSON.parse(JSON.stringify(v.carrinho)); } 
+            else if (v.prodId) {
                 const p = db.produtos.find(p => p.id == v.prodId);
-                carrinhoAtual = [{
-                    prodId: v.prodId,
-                    nome: p ? p.nome : 'Produto (Antigo)',
-                    qtd: v.qtd || 1,
-                    unit: v.unit || 0,
-                    totalItem: (v.qtd || 1) * (v.unit || 0)
-                }];
-            } else {
-                carrinhoAtual = [];
-            }
+                carrinhoAtual = [{ prodId: v.prodId, nome: p ? p.nome : 'Produto (Antigo)', qtd: v.qtd || 1, unit: v.unit || 0, totalItem: (v.qtd || 1) * (v.unit || 0) }];
+            } else { carrinhoAtual = []; }
 
-            renderizarCarrinhoNaTela();
-            toggleCheque(); 
-            
+            renderizarCarrinhoNaTela(); toggleCheque(); 
             document.getElementById('modal-title-venda').innerText = "Editar Venda #" + v.id; 
             document.getElementById('btn-save-venda').innerText = "SALVAR ALTERAÇÕES"; 
             document.getElementById('modal-venda').style.display = 'flex';
@@ -509,17 +849,20 @@
             if(carrinhoAtual.length === 0) return alert('Você precisa adicionar pelo menos um produto ao carrinho!');
             const idEdit = document.getElementById('v-id-edit').value;
             const cliId = document.getElementById('v-cliente').value;
+            const vendNome = document.getElementById('v-vendedor').value;
+            
             if(!cliId) return alert('Selecione o cliente!');
+            if(!vendNome) return alert('Selecione o vendedor!');
 
             const cliente = db.clientes.find(c => c.id == cliId);
             const total = atualizarTotalTela();
             const pgto = document.getElementById('v-pgto').value;
             let d = new Date(); d.setDate(d.getDate() + (cliente.prazo || 0));
-            
             const resumoItens = carrinhoAtual.map(i => `${i.nome} (x${i.qtd})`).join(', ');
 
             const baseData = {
-                vendedor: document.getElementById('v-vendedor').value, tipo: document.getElementById('v-tipo').value,
+                vendedor: vendNome, 
+                tipo: document.getElementById('v-tipo').value,
                 cliente: cliente.nome, clienteId: cliente.id, carrinho: [...carrinhoAtual], 
                 acres: document.getElementById('v-acres').value, desc: document.getElementById('v-desc').value, 
                 total: total, pagamento: pgto, 
@@ -527,49 +870,45 @@
                 status: 'Ativa', itens: resumoItens 
             };
 
+            let vId = idEdit;
+
             if (idEdit) {
                 const index = db.vendas.findIndex(v => v.id == idEdit);
                 if (index !== -1) { 
-                    if(db.vendas[index].pagamento === 'Prazo em Carteira' && pgto === 'Prazo em Carteira') {
-                        baseData.vencimento = db.vendas[index].vencimento;
-                    }
+                    if(db.vendas[index].pagamento === 'Prazo em Carteira' && pgto === 'Prazo em Carteira') { baseData.vencimento = db.vendas[index].vencimento; }
                     db.vendas[index] = { ...db.vendas[index], ...baseData }; alert("Venda atualizada!"); 
                 }
             } else {
                 const novaVenda = { id: db.vendas.length > 0 ? Math.max(...db.vendas.map(v => v.id)) + 1 : 1000, data: new Date().toISOString(), ...baseData };
                 db.vendas.push(novaVenda);
-                if(confirm('Venda realizada! Imprimir recibo?')) printReceipt(novaVenda.id);
+                vId = novaVenda.id;
             }
 
-            saveDB(); closeSaleModal(); renderSales();
+            saveDB(); 
+            closeSaleModal(); 
+            renderSales();
+
+            if(!idEdit) {
+                setTimeout(() => {
+                    if(confirm('Venda salva com sucesso!\n\nDeseja imprimir a VIA DO CLIENTE agora?')) {
+                        printReceipt(vId, 'cliente');
+                    }
+                }, 300);
+            }
         }
 
         function cancelSale(id) { if(confirm('Cancelar venda?')) { db.vendas.find(v => v.id === id).status = 'Cancelada'; saveDB(); renderSales(); } }
         
-        function printReceipt(id) {
-            const v = db.vendas.find(v => v.id === id);
-            let listaProdutosHtml = "";
-            if(v.carrinho && v.carrinho.length > 0) {
-                listaProdutosHtml = v.carrinho.map(item => `${item.nome} -- Qtd: ${item.qtd} -- R$ ${item.totalItem.toFixed(2)}`).join('<br>');
-            } else {
-                listaProdutosHtml = v.itens; 
-            }
-
-            document.getElementById('receipt-print').innerHTML = `
-                <div style="text-align:center"><h3>RECIBO</h3><p>Nº: ${v.id}</p><hr></div>
-                <p>Data: ${new Date(v.data).toLocaleString()}</p>
-                <p>Cliente: ${v.cliente}</p>
-                <p>Vendedor: ${v.vendedor}</p>
-                <hr><p><b>ITENS:</b><br>${listaProdutosHtml}</p><hr>
-                ${v.acres > 0 ? `<p>Acréscimo: R$ ${parseFloat(v.acres).toFixed(2)}</p>` : ''}
-                ${v.desc > 0 ? `<p>Desconto: R$ ${parseFloat(v.desc).toFixed(2)}</p>` : ''}
-                <h4>TOTAL A PAGAR: R$ ${v.total.toFixed(2)}</h4>
-                <p>Pgto: ${v.pagamento}</p>
-            `;
-            window.print();
-        }
-
-        window.onload = () => { renderProducts(); renderClients(); renderSales(); renderAcerto(); };
+        window.onload = () => { 
+            renderVendedores(); 
+            renderProducts(); 
+            renderClients(); 
+            renderSales(); 
+            document.getElementById('f-acerto-inicio').value = '';
+            document.getElementById('f-acerto-fim').value = '';
+            renderAcerto(); 
+            document.getElementById('nav-home').classList.add('active-nav');
+        };
         window.addEventListener('keydown', e => { if(e.key === 'F1') { e.preventDefault(); openSaleModal(); } });
     </script>
 </body>
