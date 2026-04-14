@@ -333,3 +333,224 @@
             document.getElementById('c-id-edit').value = '';
             document.getElementById('btn-cli-save').innerText = 'Cadastrar Cliente';
         }
+
+        function editClient(id) {
+            const c = db.clientes.find(c => c.id === id);
+            document.getElementById('c-id-edit').value = c.id;
+            document.getElementById('c-nome').value = c.nome;
+            document.getElementById('c-prazo').value = c.prazo;
+            document.getElementById('btn-cli-save').innerText = 'Atualizar Cliente';
+            window.scrollTo(0,0);
+        }
+
+        function deleteClient(id) {
+            if(confirm('Excluir cliente permanentemente?')) {
+                db.clientes = db.clientes.filter(c => c.id !== id);
+                saveDB();
+                renderClients();
+            }
+        }
+
+        function renderClients() {
+            const tbody = document.getElementById('cli-table-body');
+            tbody.innerHTML = db.clientes.map(c => `
+                <tr>
+                    <td>#${c.id}</td>
+                    <td>${c.nome}</td>
+                    <td>${c.prazo} dias</td>
+                    <td>
+                        <button class="btn btn-ghost" onclick="editClient(${c.id})" style="padding:4px 8px">Editar</button>
+                        <button class="btn btn-danger" onclick="deleteClient(${c.id})" style="padding:4px 8px">Excluir</button>
+                    </td>
+                </tr>
+            `).join('');
+            
+            const vCli = document.getElementById('v-cliente');
+            vCli.innerHTML = '<option value="">Selecione...</option>' + 
+                db.clientes.map(c => `<option value="${c.id}">${c.nome}</option>`).join('');
+        }
+
+        // --- LÓGICA DE VENDA ---
+        function openSaleModal() {
+            if(db.produtos.length === 0) return alert('Cadastre produtos primeiro!');
+            document.getElementById('modal-venda').style.display = 'flex';
+        }
+
+        function closeSaleModal() { document.getElementById('modal-venda').style.display = 'none'; }
+
+        function autoFillProduct() {
+            const id = document.getElementById('v-prod-select').value;
+            const p = db.produtos.find(p => p.id == id);
+            if(p) {
+                document.getElementById('v-unit').value = p.preco;
+                calcSaleTotal();
+            }
+        }
+
+        function calcSaleTotal() {
+            const qtd = parseFloat(document.getElementById('v-qtd').value) || 0;
+            const unit = parseFloat(document.getElementById('v-unit').value) || 0;
+            const acres = parseFloat(document.getElementById('v-acres').value) || 0;
+            const desc = parseFloat(document.getElementById('v-desc').value) || 0;
+            const total = (qtd * unit) + acres - desc;
+            document.getElementById('v-total-txt').innerText = total.toFixed(2);
+            return total;
+        }
+
+        function toggleCheque() {
+            document.getElementById('div-cheque').classList.toggle('hidden', document.getElementById('v-pgto').value !== 'Cheque');
+        }
+
+        function executeSale(e) {
+            e.preventDefault();
+            const cliId = document.getElementById('v-cliente').value;
+            const cliente = db.clientes.find(c => c.id == cliId);
+            const pgto = document.getElementById('v-pgto').value;
+            const total = calcSaleTotal();
+            
+            let vencimento = null;
+            if(pgto === 'Prazo em Carteira') {
+                let d = new Date();
+                d.setDate(d.getDate() + (cliente.prazo || 0));
+                vencimento = d.toISOString().split('T')[0];
+            }
+
+            const venda = {
+                id: db.vendas.length > 0 ? Math.max(...db.vendas.map(v => v.id)) + 1 : 5000,
+                data: new Date().toISOString(),
+                vendedor: document.getElementById('v-vendedor').value,
+                cliente: cliente.nome,
+                clienteId: cliente.id,
+                total: total,
+                pagamento: pgto,
+                vencimento: vencimento,
+                status: 'Ativa',
+                itens: document.getElementById('v-prod-select').options[document.getElementById('v-prod-select').selectedIndex].text + " x" + document.getElementById('v-qtd').value
+            };
+
+            db.vendas.push(venda);
+            saveDB();
+            closeSaleModal();
+            renderSales();
+            if(confirm('Venda realizada! Deseja imprimir o recibo?')) printReceipt(venda.id);
+        }
+
+        function cancelSale(id) {
+            if(confirm('Deseja realmente CANCELAR esta venda?')) {
+                const v = db.vendas.find(v => v.id === id);
+                v.status = 'Cancelada';
+                saveDB();
+                renderSales();
+            }
+        }
+
+        // --- DASHBOARD E LISTAGEM ---
+        function updateDashboard() {
+            const hoje = new Date().toISOString().split('T')[0];
+            const mesAtual = hoje.substring(0, 7);
+
+            const totalHoje = db.vendas.filter(v => v.data.startsWith(hoje) && v.status === 'Ativa').reduce((acc, v) => acc + v.total, 0);
+            const totalMes = db.vendas.filter(v => v.data.startsWith(mesAtual) && v.status === 'Ativa').reduce((acc, v) => acc + v.total, 0);
+            const pendente = db.vendas.filter(v => v.pagamento === 'Prazo em Carteira' && v.status === 'Ativa').reduce((acc, v) => acc + v.total, 0);
+
+            document.getElementById('dash-hoje').innerText = `R$ ${totalHoje.toFixed(2)}`;
+            document.getElementById('dash-mes').innerText = `R$ ${totalMes.toFixed(2)}`;
+            document.getElementById('dash-pendente').innerText = `R$ ${pendente.toFixed(2)}`;
+        }
+
+        function renderSales() {
+            const tbody = document.getElementById('sales-table-body');
+            const busca = document.getElementById('f-busca').value.toLowerCase();
+            const inicio = document.getElementById('f-inicio').value;
+            const fim = document.getElementById('f-fim').value;
+
+            let filtradas = db.vendas.filter(v => {
+                const dataV = v.data.split('T')[0];
+                const matchBusca = v.cliente.toLowerCase().includes(busca) || v.id.toString().includes(busca);
+                const matchData = (!inicio || dataV >= inicio) && (!fim || dataV <= fim);
+                return matchBusca && matchData;
+            }).reverse();
+
+            tbody.innerHTML = filtradas.map(v => `
+                <tr style="${v.status === 'Cancelada' ? 'text-decoration: line-through; opacity: 0.6' : ''}">
+                    <td>#${v.id}</td>
+                    <td>${new Date(v.data).toLocaleString()}</td>
+                    <td>${v.cliente}</td>
+                    <td><b>R$ ${v.total.toFixed(2)}</b></td>
+                    <td>${v.pagamento}</td>
+                    <td><span class="badge ${v.status === 'Ativa' ? 'badge-success' : 'badge-danger'}">${v.status}</span></td>
+                    <td>
+                        <button class="btn btn-ghost" onclick="printReceipt(${v.id})" title="Imprimir Recibo">🖨️</button>
+                        ${v.status === 'Ativa' ? `<button class="btn btn-danger" onclick="cancelSale(${v.id})" style="padding:4px 8px">Cancelar</button>` : ''}
+                    </td>
+                </tr>
+            `).join('');
+            updateDashboard();
+        }
+
+        // --- RECIBO ---
+        function printReceipt(id) {
+            const v = db.vendas.find(v => v.id === id);
+            const area = document.getElementById('receipt-print');
+            area.innerHTML = `
+                <div style="text-align:center">
+                    <h3>RECIBO DE VENDA</h3>
+                    <p>Nº: 00${v.id}</p>
+                    <hr>
+                </div>
+                <p>Data: ${new Date(v.data).toLocaleString()}</p>
+                <p>Cliente: ${v.cliente}</p>
+                <p>Vendedor: ${v.vendedor}</p>
+                <hr>
+                <p><b>ITENS:</b><br>${v.itens}</p>
+                <hr>
+                <p style="font-size:1.2rem"><b>TOTAL: R$ ${v.total.toFixed(2)}</b></p>
+                <p>Pagamento: ${v.pagamento}</p>
+                ${v.vencimento ? `<p><b>VENCIMENTO: ${v.vencimento.split('-').reverse().join('/')}</b></p>` : ''}
+                <br><br>
+                <div style="text-align:center; border-top:1px solid #000; padding-top:5px">Assinatura</div>
+            `;
+            window.print();
+        }
+
+        // --- ACERTO ---
+        function renderAcerto() {
+            const tbody = document.getElementById('acerto-table-body');
+            const prazo = db.vendas.filter(v => v.pagamento === 'Prazo em Carteira' && v.status === 'Ativa');
+            
+            tbody.innerHTML = prazo.map(v => `
+                <tr>
+                    <td>#${v.id}</td>
+                    <td>${v.cliente}</td>
+                    <td>${v.vencimento.split('-').reverse().join('/')}</td>
+                    <td>R$ ${v.total.toFixed(2)}</td>
+                    <td><span class="badge badge-danger">PENDENTE</span></td>
+                    <td><button class="btn btn-success" onclick="liquidar(${v.id})" style="padding:4px 8px">Receber</button></td>
+                </tr>
+            `).join('');
+        }
+
+        function liquidar(id) {
+            if(confirm('Confirmar recebimento do valor?')) {
+                const v = db.vendas.find(v => v.id === id);
+                v.pagamento = 'Pago (Líquido)';
+                saveDB();
+                renderAcerto();
+            }
+        }
+
+        // Inicialização
+        window.onload = () => {
+            const hoje = new Date().toISOString().split('T')[0];
+            document.getElementById('f-inicio').value = hoje;
+            document.getElementById('f-fim').value = hoje;
+            renderProducts();
+            renderClients();
+            renderSales();
+        };
+
+        // Atalho F1 para nova venda
+        window.addEventListener('keydown', e => { if(e.key === 'F1') { e.preventDefault(); openSaleModal(); } });
+    </script>
+</body>
+</html>
