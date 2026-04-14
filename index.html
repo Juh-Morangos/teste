@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Vendas Pro v8.8 - Cancelar Baixa</title>
+    <title>Sistema de Vendas Pro v8.9 - Workflow Otimizado</title>
     <style>
         :root { --primary: #2563eb; --success: #10b981; --danger: #ef4444; --warning: #f59e0b; --bg: #f3f4f6; --text: #1f2937; --info: #0ea5e9; }
         body { font-family: 'Segoe UI', system-ui, sans-serif; margin: 0; background-color: var(--bg); color: var(--text); }
@@ -141,13 +141,14 @@
                             <tr>
                                 <th style="width: 40px; text-align: center;"><input type="checkbox" id="check-all-vendas" onclick="toggleTodasVendas(this)"></th>
                                 <th>Nº</th>
-                                <th>Data/Hora</th>
+                                <th>Data Pedido</th>
+                                <th>Inclusão (Sistema)</th>
                                 <th>Cliente</th>
                                 <th>Vendedor</th>
                                 <th>Total</th>
                                 <th>Pagamento</th>
                                 <th>Status</th>
-                                <th style="text-align: center;">Imprimir Cupom</th>
+                                <th style="text-align: center;">Cupom</th>
                                 <th>Ações</th>
                             </tr>
                         </thead>
@@ -242,7 +243,9 @@
             </div>
             <form id="form-venda" onsubmit="executeSale(event)">
                 <input type="hidden" id="v-id-edit">
+                
                 <div class="form-row">
+                    <div class="form-group"><label>Data</label><input type="date" id="v-data" required></div>
                     <div class="form-group">
                         <label>Vendedor</label>
                         <select id="v-vendedor" required></select>
@@ -435,7 +438,9 @@
             document.getElementById('check-all-vendas').checked = false; 
 
             let filtradas = db.vendas.filter(v => {
-                const dataV = v.data.split('T')[0];
+                // Utiliza a data do pedido (se existir) ou a data de inclusão para os filtros
+                const dataV = v.dataPedido ? v.dataPedido : v.data.split('T')[0];
+                
                 const matchBusca = v.cliente.toLowerCase().includes(busca) || v.id.toString().includes(busca);
                 const matchData = (!inicio || dataV >= inicio) && (!fim || dataV <= fim);
                 
@@ -447,11 +452,17 @@
                 return matchBusca && matchData;
             }).reverse();
 
-            tbody.innerHTML = filtradas.map(v => `
+            tbody.innerHTML = filtradas.map(v => {
+                // Trata as duas datas para exibição
+                const dataPedStr = v.dataPedido ? v.dataPedido.split('-').reverse().join('/') : v.data.split('T')[0].split('-').reverse().join('/');
+                const dataIncStr = new Date(v.data).toLocaleString('pt-BR');
+
+                return `
                 <tr style="${v.status === 'Cancelada' ? 'background: #fff5f5' : ''}">
                     <td style="text-align: center;"><input type="checkbox" class="check-venda" value="${v.id}"></td>
                     <td>#${v.id}</td>
-                    <td>${new Date(v.data).toLocaleString('pt-BR')}</td>
+                    <td><b>${dataPedStr}</b></td>
+                    <td style="font-size: 0.8rem; color: #666;">${dataIncStr}</td>
                     <td>${v.cliente}</td>
                     <td>${v.vendedor || '-'}</td>
                     <td><b>R$ ${v.total.toFixed(2)}</b></td>
@@ -466,7 +477,8 @@
                         ${v.status === 'Ativa' ? `<button class="btn btn-danger" onclick="cancelSale(${v.id})" style="padding:4px" title="Cancelar">X</button>` : ''}
                     </td>
                 </tr>
-            `).join('');
+                `;
+            }).join('');
             
             updateDashboard(filtradas);
         }
@@ -476,8 +488,16 @@
             const hoje = new Date().toISOString().split('T')[0];
             const mesAtual = hoje.substring(0, 7);
             
-            const tHoje = baseVendas.filter(v => v.data.startsWith(hoje) && v.status === 'Ativa').reduce((acc, v) => acc + v.total, 0);
-            const tMes = baseVendas.filter(v => v.data.startsWith(mesAtual) && v.status === 'Ativa').reduce((acc, v) => acc + v.total, 0);
+            const tHoje = baseVendas.filter(v => {
+                const d = v.dataPedido ? v.dataPedido : v.data.split('T')[0];
+                return d === hoje && v.status === 'Ativa';
+            }).reduce((acc, v) => acc + v.total, 0);
+
+            const tMes = baseVendas.filter(v => {
+                const d = v.dataPedido ? v.dataPedido : v.data.split('T')[0];
+                return d.startsWith(mesAtual) && v.status === 'Ativa';
+            }).reduce((acc, v) => acc + v.total, 0);
+
             const tPendente = baseVendas.filter(v => (v.pagamento === 'Prazo em Carteira' || (v.vencimento !== null && !v.pagamento.includes('Acertado'))) && v.status === 'Ativa').reduce((acc, v) => acc + v.total, 0);
             
             document.getElementById('dash-hoje').innerText = `R$ ${tHoje.toFixed(2)}`;
@@ -507,13 +527,15 @@
                 } else { listaProdutosHtml = v.itens; }
             }
 
+            const dataDoPedido = v.dataPedido ? v.dataPedido.split('-').reverse().join('/') : new Date(v.data).toLocaleDateString('pt-BR');
+
             let html = `
                 <div style="text-align:center">
                     <h3 style="margin:0">${tipo === 'cliente' ? 'RECIBO DO CLIENTE' : 'ORDEM DE SEPARACAO'}</h3>
                     <p style="margin:5px 0">Pedido Nº: ${v.id}</p>
                     <hr style="border-top:1px dashed #000; border-bottom:none;">
                 </div>
-                <p style="margin:5px 0">Data: ${new Date(v.data).toLocaleString('pt-BR')}</p>
+                <p style="margin:5px 0">Data do Pedido: ${dataDoPedido}</p>
                 <p style="margin:5px 0">Cliente: ${v.cliente}</p>
                 <p style="margin:5px 0">Vendedor: ${v.vendedor || '-'}</p>
                 <hr style="border-top:1px dashed #000; border-bottom:none;">
@@ -571,12 +593,12 @@
 
             vendas.forEach(v => {
                 totalGeral += v.total;
-                const dataFormatada = new Date(v.data).toLocaleDateString('pt-BR');
+                const dPed = v.dataPedido ? v.dataPedido.split('-').reverse().join('/') : v.data.split('T')[0].split('-').reverse().join('/');
                 const clienteFormatado = `${v.clienteId || '0'} - ${v.cliente}`;
 
                 html += `
                     <tr class="report-header-row">
-                        <td colspan="2"><b>${v.id} &nbsp;&nbsp;&nbsp; ${v.vendedor || ''} &nbsp; ${dataFormatada}</b></td>
+                        <td colspan="2"><b>${v.id} &nbsp;&nbsp;&nbsp; ${v.vendedor || ''} &nbsp; ${dPed}</b></td>
                         <td colspan="2"><b>${clienteFormatado.toUpperCase()}</b></td>
                         <td style="text-align: right;"><b>${v.total.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</b></td>
                     </tr>
@@ -649,7 +671,6 @@
 
             if(contas.length === 0) { tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding: 2rem; color: #666;">Nenhuma conta encontrada com estes filtros.</td></tr>`; return; }
 
-            // AQUI ADICIONAMOS O BOTÃO DE DESFAZER A BAIXA
             tbody.innerHTML = contas.map(v => {
                 const isPago = v.pagamento.includes('Acertado');
                 const isVencido = !isPago && v.vencimento < hoje;
@@ -672,7 +693,6 @@
             }
         }
 
-        // --- NOVO: FUNÇÃO PARA DESFAZER A BAIXA ---
         function cancelarBaixa(id) {
             if(confirm('Tem certeza que deseja cancelar esta baixa?\n\nA conta voltará a ficar "Em Aberto" no formato "Prazo em Carteira".')) {
                 const v = db.vendas.find(v => v.id === id);
@@ -680,13 +700,12 @@
                     v.pagamento = 'Prazo em Carteira'; 
                     saveDB(); 
                     renderAcerto(); 
-                    renderSales(); // Atualiza painel e lista de vendas principal
+                    renderSales();
                     alert("Baixa desfeita com sucesso!"); 
                 }
             }
         }
 
-        // --- IMPRIMIR RELATÓRIO DO ACERTO ---
         function imprimirRelatorioAcerto() {
             const hoje = new Date().toISOString().split('T')[0];
             const busca = (document.getElementById('f-acerto-busca')?.value || '').toLowerCase();
@@ -787,8 +806,14 @@
             
             carrinhoAtual.push({ prodId: p.id, nome: p.nome, qtd: qtd, unit: unit, totalItem: qtd * unit });
 
-            document.getElementById('v-prod-select').value = ""; document.getElementById('v-qtd').value = "1"; document.getElementById('v-unit').value = "";
+            // LIMPA OS CAMPOS E VOLTA O FOCO PARA A SELEÇÃO DO PRODUTO (NOVO)
+            document.getElementById('v-prod-select').value = ""; 
+            document.getElementById('v-qtd').value = "1"; 
+            document.getElementById('v-unit').value = "";
             renderizarCarrinhoNaTela();
+            
+            // Foco Automático
+            document.getElementById('v-prod-select').focus();
         }
 
         function removerDoCarrinho(index) { carrinhoAtual.splice(index, 1); renderizarCarrinhoNaTela(); }
@@ -829,6 +854,9 @@
             document.getElementById('modal-title-venda').innerText = "Nova Venda"; 
             document.getElementById('btn-save-venda').innerText = "FINALIZAR NOVA VENDA"; 
             
+            // Define a data do pedido como o dia atual ao abrir o modal (NOVO)
+            document.getElementById('v-data').value = new Date().toISOString().split('T')[0];
+
             carrinhoAtual = []; renderizarCarrinhoNaTela();
             document.getElementById('modal-venda').style.display = 'flex'; 
         }
@@ -836,6 +864,10 @@
         function editSale(id) {
             const v = db.vendas.find(v => v.id === id); if(!v) return;
             document.getElementById('v-id-edit').value = v.id; 
+            
+            // Carrega a data do pedido correta ou faz fallback para a data antiga (NOVO)
+            document.getElementById('v-data').value = v.dataPedido ? v.dataPedido : v.data.split('T')[0];
+            
             document.getElementById('v-vendedor').value = v.vendedor || ''; 
             document.getElementById('v-tipo').value = v.tipo || 'Venda'; 
             document.getElementById('v-cliente').value = v.clienteId || ''; 
@@ -863,6 +895,7 @@
             const idEdit = document.getElementById('v-id-edit').value;
             const cliId = document.getElementById('v-cliente').value;
             const vendNome = document.getElementById('v-vendedor').value;
+            const dataPedido = document.getElementById('v-data').value; // Puxa a data escolhida (NOVO)
             
             if(!cliId) return alert('Selecione o cliente!');
             if(!vendNome) return alert('Selecione o vendedor!');
@@ -870,10 +903,15 @@
             const cliente = db.clientes.find(c => c.id == cliId);
             const total = atualizarTotalTela();
             const pgto = document.getElementById('v-pgto').value;
-            let d = new Date(); d.setDate(d.getDate() + (cliente.prazo || 0));
+            
+            // O prazo começa a contar a partir da data informada no pedido
+            let d = new Date(dataPedido + "T12:00:00"); 
+            d.setDate(d.getDate() + (cliente.prazo || 0));
+            
             const resumoItens = carrinhoAtual.map(i => `${i.nome} (x${i.qtd})`).join(', ');
 
             const baseData = {
+                dataPedido: dataPedido, // Adicionado (NOVO)
                 vendedor: vendNome, 
                 tipo: document.getElementById('v-tipo').value,
                 cliente: cliente.nome, clienteId: cliente.id, carrinho: [...carrinhoAtual], 
@@ -892,6 +930,7 @@
                     db.vendas[index] = { ...db.vendas[index], ...baseData }; alert("Venda atualizada!"); 
                 }
             } else {
+                // A data de inclusão sempre será o momento real em que clicou em salvar
                 const novaVenda = { id: db.vendas.length > 0 ? Math.max(...db.vendas.map(v => v.id)) + 1 : 1000, data: new Date().toISOString(), ...baseData };
                 db.vendas.push(novaVenda);
                 vId = novaVenda.id;
