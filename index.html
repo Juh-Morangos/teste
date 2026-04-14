@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Vendas Pro v8.7 - Relatório de Acertos</title>
+    <title>Sistema de Vendas Pro v8.8 - Cancelar Baixa</title>
     <style>
         :root { --primary: #2563eb; --success: #10b981; --danger: #ef4444; --warning: #f59e0b; --bg: #f3f4f6; --text: #1f2937; --info: #0ea5e9; }
         body { font-family: 'Segoe UI', system-ui, sans-serif; margin: 0; background-color: var(--bg); color: var(--text); }
@@ -72,7 +72,7 @@
                 position: absolute; 
                 left: 0; 
                 top: 0; 
-                width: 80mm; /* Mantém o padrão térmico, mas alteramos via JS para A4 nos relatórios */
+                width: 80mm; 
                 padding: 2mm; 
                 color: black; 
                 background: white; 
@@ -649,14 +649,17 @@
 
             if(contas.length === 0) { tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding: 2rem; color: #666;">Nenhuma conta encontrada com estes filtros.</td></tr>`; return; }
 
+            // AQUI ADICIONAMOS O BOTÃO DE DESFAZER A BAIXA
             tbody.innerHTML = contas.map(v => {
                 const isPago = v.pagamento.includes('Acertado');
                 const isVencido = !isPago && v.vencimento < hoje;
                 let rowStyle = isPago ? 'background: #f0fdf4; opacity: 0.8;' : (isVencido ? 'background: #fef2f2;' : '');
                 let statusBadge = isPago ? '<span class="badge badge-success">PAGO</span>' : (isVencido ? '<span class="badge badge-danger">VENCIDO</span>' : '<span class="badge badge-warning">A VENCER</span>');
+                
                 let actionHtml = isPago 
-                    ? `<span style="color: #059669; font-weight: bold;">✔ ${v.pagamento.replace('Acertado (','').replace(')','')}</span>` 
+                    ? `<div style="display:flex; justify-content:space-between; align-items:center; gap:5px;"><span style="color: #059669; font-weight: bold;">✔ ${v.pagamento.replace('Acertado (','').replace(')','')}</span> <button class="btn btn-ghost" style="padding: 2px 6px; font-size: 0.8rem; color: var(--danger); border-color: var(--danger);" onclick="cancelarBaixa(${v.id})" title="Desfazer Baixa (Voltar para Em Aberto)">↩️</button></div>` 
                     : `<div style="display: flex; gap: 5px;"><select id="metodo-acerto-${v.id}" style="padding: 4px;"><option value="Dinheiro">Dinheiro</option><option value="PIX">PIX</option><option value="Cartão">Cartão</option></select><button class="btn btn-success" onclick="liquidar(${v.id})" style="padding:4px 8px">Baixa</button></div>`;
+                
                 return `<tr style="${rowStyle}"><td><b>#${v.id}</b></td><td>${v.cliente}</td><td style="${isVencido ? 'color: red; font-weight: bold;' : ''}">${v.vencimento.split('-').reverse().join('/')}</td><td><b>R$ ${v.total.toFixed(2)}</b></td><td>${statusBadge}</td><td>${actionHtml}</td></tr>`;
             }).join('');
         }
@@ -669,7 +672,21 @@
             }
         }
 
-        // --- NOVO: IMPRIMIR RELATÓRIO DO ACERTO ---
+        // --- NOVO: FUNÇÃO PARA DESFAZER A BAIXA ---
+        function cancelarBaixa(id) {
+            if(confirm('Tem certeza que deseja cancelar esta baixa?\n\nA conta voltará a ficar "Em Aberto" no formato "Prazo em Carteira".')) {
+                const v = db.vendas.find(v => v.id === id);
+                if(v) { 
+                    v.pagamento = 'Prazo em Carteira'; 
+                    saveDB(); 
+                    renderAcerto(); 
+                    renderSales(); // Atualiza painel e lista de vendas principal
+                    alert("Baixa desfeita com sucesso!"); 
+                }
+            }
+        }
+
+        // --- IMPRIMIR RELATÓRIO DO ACERTO ---
         function imprimirRelatorioAcerto() {
             const hoje = new Date().toISOString().split('T')[0];
             const busca = (document.getElementById('f-acerto-busca')?.value || '').toLowerCase();
@@ -678,7 +695,6 @@
 
             let contas = db.vendas.filter(v => v.vencimento !== null && v.status === 'Ativa');
 
-            // Refaz o filtro para pegar exatamente o que está na tela
             contas = contas.filter(v => {
                 const isPago = v.pagamento.includes('Acertado');
                 const isVencido = !isPago && v.vencimento < hoje;
@@ -698,7 +714,6 @@
 
             if (contas.length === 0) return alert("Nenhuma conta para imprimir com os filtros atuais.");
 
-            // Gera o HTML do relatório em A4
             let html = `
                 <div style="text-align: center; margin-bottom: 20px; font-family: sans-serif;">
                     <h2>RELATÓRIO DE ACERTO DE CONTAS</h2>
@@ -746,12 +761,10 @@
                 </div>
             `;
 
-            // Força largura de A4
             document.getElementById('receipt-print').style.width = '100%';
             document.getElementById('receipt-print').innerHTML = html;
             window.print();
             
-            // Retorna para largura de bobina térmica
             setTimeout(() => { document.getElementById('receipt-print').style.width = '80mm'; }, 500);
         }
 
