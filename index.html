@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Vendas Pro v9.1 - Datas e Vencimentos Retroativos</title>
+    <title>Sistema de Vendas Pro v9.2 - PDV Rápido e Atalhos</title>
     <style>
         :root { --primary: #2563eb; --success: #10b981; --danger: #ef4444; --warning: #f59e0b; --bg: #f3f4f6; --text: #1f2937; --info: #0ea5e9; }
         body { font-family: 'Segoe UI', system-ui, sans-serif; margin: 0; background-color: var(--bg); color: var(--text); }
@@ -79,7 +79,7 @@
 <body>
 
     <header class="no-print">
-        <h2 style="margin:0">🚀 VendaFlow Pro</h2>
+        <h2 style="margin:0">🚀PDV VAREJÃO</h2>
         <nav>
             <button id="nav-home" onclick="navigate('home')">Início/Vendas</button>
             <button id="nav-produtos" onclick="navigate('produtos')">Produtos</button>
@@ -299,7 +299,7 @@
         <div class="modal">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem">
                 <h2 id="modal-title-venda" style="margin:0">Nova Venda</h2>
-                <button onclick="closeSaleModal()" style="font-size:1.5rem; border:none; background:none; cursor:pointer">&times;</button>
+                <button type="button" onclick="closeSaleModal()" style="font-size:1.5rem; border:none; background:none; cursor:pointer">&times;</button>
             </div>
             <form id="form-venda" onsubmit="executeSale(event)">
                 <input type="hidden" id="v-id-edit">
@@ -353,7 +353,7 @@
                 
                 <div style="display:flex; justify-content:space-between; align-items:center; background:#1e293b; color:white; padding:1.5rem; border-radius:8px; margin-top: 1rem;">
                     <div><span style="font-size:0.9rem; opacity:0.8">TOTAL DA VENDA</span><br><b style="font-size:1.8rem">R$ <span id="v-total-txt">0,00</span></b></div>
-                    <button type="submit" class="btn btn-success" id="btn-save-venda">FINALIZAR VENDA</button>
+                    <button type="submit" class="btn btn-success" id="btn-save-venda">FINALIZAR VENDA (F11)</button>
                 </div>
             </form>
         </div>
@@ -363,7 +363,7 @@
         <div class="modal" style="max-width: 500px; padding: 1.5rem;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px;">
                 <h2 style="margin:0; color: var(--primary);">Fechar Pagamento</h2>
-                <button onclick="fecharModalBaixa()" style="font-size:1.5rem; border:none; background:none; cursor:pointer">&times;</button>
+                <button type="button" onclick="fecharModalBaixa()" style="font-size:1.5rem; border:none; background:none; cursor:pointer">&times;</button>
             </div>
             
             <p style="font-size: 0.9rem; color: #666; margin-bottom: 5px;">Contas selecionadas para baixa:</p>
@@ -443,17 +443,17 @@
 
         function saveVendedor(e) { e.preventDefault(); const idEdit = document.getElementById('vend-id-edit').value; const vNome = document.getElementById('vend-nome').value; if (idEdit) { const idx = db.vendedores.findIndex(v => v.id == idEdit); if (idx > -1) { db.vendedores[idx] = { ...db.vendedores[idx], nome: vNome }; alert("Vendedor atualizado!"); } } else { db.vendedores.push({ id: Date.now(), nome: vNome }); } saveDB(); renderVendedores(); e.target.reset(); document.getElementById('vend-id-edit').value = ''; document.getElementById('btn-vend-save').innerText = 'Salvar Vendedor'; }
         function editVendedor(id) { const v = db.vendedores.find(v => v.id === id); if (!v) return; document.getElementById('vend-id-edit').value = v.id; document.getElementById('vend-nome').value = v.nome; document.getElementById('btn-vend-save').innerText = 'Atualizar Vendedor'; window.scrollTo(0,0); }
-        function renderVendedores() { document.getElementById('vend-table-body').innerHTML = db.vendedores.map(v => `<tr><td>#${v.id}</td><td>${v.nome}</td><td><button class="btn btn-info" onclick="editVendedor(${v.id})" style="padding:4px">✏️</button> <button class="btn btn-danger" onclick="deleteVendedor(${v.id})" style="padding:4px">X</button></td></tr>`).join(''); const options = '<option value="">Selecione...</option>' + db.vendedores.map(v => `<option value="${v.nome}">${v.nome}</option>`).join(''); const filterOptions = '<option value="">Todos</option>' + db.vendedores.map(v => `<option value="${v.nome}">${v.nome}</option>`).join(''); document.getElementById('v-vendedor').innerHTML = options; document.getElementById('f-vendedor').innerHTML = filterOptions; }
+        function renderVendedores() { document.getElementById('vend-table-body').innerHTML = db.vendedores.map(v => `<tr><td>#${v.id}</td><td>${v.nome}</td><td><button type="button" class="btn btn-info" onclick="editVendedor(${v.id})" style="padding:4px">✏️</button> <button type="button" class="btn btn-danger" onclick="deleteVendedor(${v.id})" style="padding:4px">X</button></td></tr>`).join(''); const options = '<option value="">Selecione...</option>' + db.vendedores.map(v => `<option value="${v.nome}">${v.nome}</option>`).join(''); const filterOptions = '<option value="">Todos</option>' + db.vendedores.map(v => `<option value="${v.nome}">${v.nome}</option>`).join(''); document.getElementById('v-vendedor').innerHTML = options; document.getElementById('f-vendedor').innerHTML = filterOptions; }
         function deleteVendedor(id) { if(confirm('Excluir vendedor?')) { db.vendedores = db.vendedores.filter(v => v.id !== id); saveDB(); renderVendedores(); } }
 
         function saveProduct(e) { e.preventDefault(); const idEdit = document.getElementById('p-id-edit').value; const pNome = document.getElementById('p-nome').value; const pUnidade = document.getElementById('p-unidade').value; const pPreco = parseFloat(document.getElementById('p-preco').value) || 0; if (idEdit) { const idx = db.produtos.findIndex(p => p.id == idEdit); if (idx > -1) { db.produtos[idx] = { ...db.produtos[idx], nome: pNome, unidade: pUnidade, preco: pPreco }; alert("Produto atualizado!"); } } else { db.produtos.push({ id: Date.now(), nome: pNome, unidade: pUnidade, preco: pPreco }); } saveDB(); renderProducts(); e.target.reset(); document.getElementById('p-id-edit').value = ''; document.getElementById('btn-prod-save').innerText = 'Salvar Produto'; }
         function editProduct(id) { const p = db.produtos.find(p => p.id === id); if (!p) return; document.getElementById('p-id-edit').value = p.id; document.getElementById('p-nome').value = p.nome; document.getElementById('p-unidade').value = p.unidade; document.getElementById('p-preco').value = p.preco; document.getElementById('btn-prod-save').innerText = 'Atualizar Produto'; window.scrollTo(0,0); }
-        function renderProducts() { document.getElementById('prod-table-body').innerHTML = db.produtos.map(p => `<tr><td>#${p.id}</td><td>${p.nome}</td><td>${p.unidade}</td><td>R$ ${p.preco.toFixed(2)}</td><td><button class="btn btn-info" onclick="editProduct(${p.id})" style="padding:4px">✏️</button> <button class="btn btn-danger" onclick="deleteProd(${p.id})" style="padding:4px">X</button></td></tr>`).join(''); document.getElementById('v-prod-select').innerHTML = '<option value="">Selecione...</option>' + db.produtos.map(p => `<option value="${p.id}">${p.nome}</option>`).join(''); }
+        function renderProducts() { document.getElementById('prod-table-body').innerHTML = db.produtos.map(p => `<tr><td>#${p.id}</td><td>${p.nome}</td><td>${p.unidade}</td><td>R$ ${p.preco.toFixed(2)}</td><td><button type="button" class="btn btn-info" onclick="editProduct(${p.id})" style="padding:4px">✏️</button> <button type="button" class="btn btn-danger" onclick="deleteProd(${p.id})" style="padding:4px">X</button></td></tr>`).join(''); document.getElementById('v-prod-select').innerHTML = '<option value="">Selecione...</option>' + db.produtos.map(p => `<option value="${p.id}">${p.nome}</option>`).join(''); }
         function deleteProd(id) { if(confirm('Excluir produto?')) { db.produtos = db.produtos.filter(p => p.id !== id); saveDB(); renderProducts(); } }
         
         function saveClient(e) { e.preventDefault(); const idEdit = document.getElementById('c-id-edit').value; const cNome = document.getElementById('c-nome').value; const cPrazo = parseInt(document.getElementById('c-prazo').value) || 0; if (idEdit) { const idx = db.clientes.findIndex(c => c.id == idEdit); if (idx > -1) { db.clientes[idx] = { ...db.clientes[idx], nome: cNome, prazo: cPrazo }; alert("Cliente atualizado!"); } } else { db.clientes.push({ id: Date.now(), nome: cNome, prazo: cPrazo }); } saveDB(); renderClients(); e.target.reset(); document.getElementById('c-id-edit').value = ''; document.getElementById('btn-cli-save').innerText = 'Salvar Cliente'; }
         function editClient(id) { const c = db.clientes.find(c => c.id === id); if (!c) return; document.getElementById('c-id-edit').value = c.id; document.getElementById('c-nome').value = c.nome; document.getElementById('c-prazo').value = c.prazo; document.getElementById('btn-cli-save').innerText = 'Atualizar Cliente'; window.scrollTo(0,0); }
-        function renderClients() { document.getElementById('cli-table-body').innerHTML = db.clientes.map(c => `<tr><td>#${c.id}</td><td>${c.nome}</td><td>${c.prazo}d</td><td><button class="btn btn-info" onclick="editClient(${c.id})" style="padding:4px">✏️</button> <button class="btn btn-danger" onclick="deleteClient(${c.id})" style="padding:4px">X</button></td></tr>`).join(''); document.getElementById('v-cliente').innerHTML = '<option value="">Selecione...</option>' + db.clientes.map(c => `<option value="${c.id}">${c.nome}</option>`).join(''); }
+        function renderClients() { document.getElementById('cli-table-body').innerHTML = db.clientes.map(c => `<tr><td>#${c.id}</td><td>${c.nome}</td><td>${c.prazo}d</td><td><button type="button" class="btn btn-info" onclick="editClient(${c.id})" style="padding:4px">✏️</button> <button type="button" class="btn btn-danger" onclick="deleteClient(${c.id})" style="padding:4px">X</button></td></tr>`).join(''); document.getElementById('v-cliente').innerHTML = '<option value="">Selecione...</option>' + db.clientes.map(c => `<option value="${c.id}">${c.nome}</option>`).join(''); }
         function deleteClient(id) { if(confirm('Excluir cliente?')) { db.clientes = db.clientes.filter(c => c.id !== id); saveDB(); renderClients(); } }
 
         function highlightRow(checkbox) { const tr = checkbox.closest('tr'); if(checkbox.checked) { tr.classList.add('selected-row'); } else { tr.classList.remove('selected-row'); } }
@@ -564,7 +564,6 @@
                     if(v.carrinho && v.carrinho.length > 0) { listaProdutosHtml = v.carrinho.map(item => `<b>[  ] ${item.qtd}x</b> - ${item.nome}`).join('<br><br>'); } else { listaProdutosHtml = v.itens; }
                 }
                 
-                // Utiliza sempre a Data do Pedido para o Cupom, removendo qualquer referência à data de inclusão
                 const dataEmissao = v.dataPedido ? v.dataPedido.split('-').reverse().join('/') : v.data.split('T')[0].split('-').reverse().join('/');
                 
                 let html = `
@@ -648,7 +647,6 @@
             }
         }
 
-        // --- ACERTO DE CONTAS (CONTAS A RECEBER) ---
         function setFiltroAcerto(filtro) {
             filtroAcertoAtual = filtro;
             ['Todos', 'A Vencer', 'Vencidos', 'Pagas'].forEach(f => document.getElementById(`f-acerto-${f}`).classList.remove('active'));
@@ -703,7 +701,6 @@
             }).join('');
         }
 
-        // --- REGISTRO DE ACERTOS (HISTÓRICO) ---
         function renderHistorico() {
             const tbody = document.getElementById('historico-table-body');
             const busca = (document.getElementById('f-hist-busca')?.value || '').toLowerCase();
@@ -733,7 +730,6 @@
             }).join('');
         }
 
-        // --- LÓGICA DE POPUP DE BAIXA E DESFAZER ---
         function abrirModalBaixa() {
             const checks = document.querySelectorAll('.check-acerto:checked');
             if(checks.length === 0) return alert("Selecione pelo menos uma conta pendente para dar baixa.");
@@ -869,9 +865,13 @@
         function openSaleModal() { 
             if(db.vendedores.length === 0) return alert('Cadastre pelo menos 1 vendedor primeiro na aba "Vendedores"!');
             if(db.produtos.length === 0 || db.clientes.length === 0) return alert('Cadastre produto e cliente!'); 
-            document.getElementById('form-venda').reset(); document.getElementById('v-id-edit').value = ''; document.getElementById('modal-title-venda').innerText = "Nova Venda"; document.getElementById('btn-save-venda').innerText = "FINALIZAR NOVA VENDA"; 
+            document.getElementById('form-venda').reset(); document.getElementById('v-id-edit').value = ''; document.getElementById('modal-title-venda').innerText = "Nova Venda"; document.getElementById('btn-save-venda').innerText = "FINALIZAR NOVA VENDA (F11)"; 
             document.getElementById('v-data').value = new Date().toISOString().split('T')[0];
-            carrinhoAtual = []; renderizarCarrinhoNaTela(); document.getElementById('modal-venda').style.display = 'flex'; 
+            carrinhoAtual = []; renderizarCarrinhoNaTela(); 
+            document.getElementById('modal-venda').style.display = 'flex'; 
+            
+            // Foco automático no Vendedor após abrir o modal
+            setTimeout(() => { document.getElementById('v-vendedor').focus(); }, 100);
         }
 
         function editSale(id) {
@@ -892,7 +892,9 @@
             } else { carrinhoAtual = []; }
 
             renderizarCarrinhoNaTela(); toggleCheque(); 
-            document.getElementById('modal-title-venda').innerText = "Editar Venda #" + v.id; document.getElementById('btn-save-venda').innerText = "SALVAR ALTERAÇÕES"; document.getElementById('modal-venda').style.display = 'flex';
+            document.getElementById('modal-title-venda').innerText = "Editar Venda #" + v.id; document.getElementById('btn-save-venda').innerText = "SALVAR ALTERAÇÕES (F11)"; 
+            document.getElementById('modal-venda').style.display = 'flex';
+            setTimeout(() => { document.getElementById('v-vendedor').focus(); }, 100);
         }
 
         function closeSaleModal() { document.getElementById('modal-venda').style.display = 'none'; }
@@ -912,7 +914,6 @@
             const total = atualizarTotalTela();
             const pgto = document.getElementById('v-pgto').value;
             
-            // O vencimento passa a ser calculado estritamente com base na Data do Pedido
             let d = new Date(dataPedido + "T12:00:00"); 
             d.setDate(d.getDate() + (cliente.prazo || 0));
             const resumoItens = carrinhoAtual.map(i => `${i.nome} (x${i.qtd})`).join(', ');
@@ -950,13 +951,54 @@
             }
         }
         
+        // --- NAVEGAÇÃO DE TECLADO (NOVO) ---
+        function setupKeyboardNavigation() {
+            const preventSubmit = (e) => { if(e.key === 'Enter') e.preventDefault(); };
+
+            document.getElementById('v-vendedor').addEventListener('keydown', (e) => {
+                if(e.key === 'Enter') { e.preventDefault(); document.getElementById('v-cliente').focus(); }
+            });
+            document.getElementById('v-cliente').addEventListener('keydown', (e) => {
+                if(e.key === 'Enter') { e.preventDefault(); document.getElementById('v-prod-select').focus(); }
+            });
+            document.getElementById('v-prod-select').addEventListener('keydown', (e) => {
+                if(e.key === 'Enter') { e.preventDefault(); document.getElementById('v-qtd').focus(); }
+            });
+            document.getElementById('v-qtd').addEventListener('keydown', (e) => {
+                if(e.key === 'Enter') { e.preventDefault(); document.getElementById('v-unit').focus(); }
+            });
+            document.getElementById('v-unit').addEventListener('keydown', (e) => {
+                if(e.key === 'Enter') { 
+                    e.preventDefault(); 
+                    adicionarAoCarrinho(); // A função adicionarAoCarrinho já possui o foco de volta no v-prod-select
+                }
+            });
+
+            // Evita que o "Enter" nos outros campos feche o modal acidentalmente
+            ['v-data', 'v-tipo', 'v-acres', 'v-desc', 'v-pgto', 'v-cheque-info'].forEach(id => {
+                const el = document.getElementById(id);
+                if(el) el.addEventListener('keydown', preventSubmit);
+            });
+        }
+
         window.onload = () => { 
             renderVendedores(); renderProducts(); renderClients(); renderSales(); 
             document.getElementById('f-acerto-inicio').value = ''; document.getElementById('f-acerto-fim').value = '';
             document.getElementById('nav-home').classList.add('active-nav');
             navigate('home');
+            setupKeyboardNavigation();
         };
-        window.addEventListener('keydown', e => { if(e.key === 'F1') { e.preventDefault(); openSaleModal(); } });
+
+        window.addEventListener('keydown', e => { 
+            if(e.key === 'F1') { e.preventDefault(); openSaleModal(); } 
+            if(e.key === 'F11') {
+                const modalVenda = document.getElementById('modal-venda');
+                if(modalVenda.style.display === 'flex') {
+                    e.preventDefault(); // Impede o navegador de entrar em tela cheia
+                    document.getElementById('btn-save-venda').click(); // Dispara o botão finalizar
+                }
+            }
+        });
     </script>
 </body>
 </html>
