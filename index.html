@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Vendas Pro v4</title>
+    <title>Sistema de Vendas Pro v5</title>
     <style>
         :root { --primary: #2563eb; --success: #10b981; --danger: #ef4444; --warning: #f59e0b; --bg: #f3f4f6; --text: #1f2937; --info: #0ea5e9; }
         body { font-family: 'Segoe UI', system-ui, sans-serif; margin: 0; background-color: var(--bg); color: var(--text); }
@@ -114,11 +114,11 @@
             <div class="card">
                 <h3>Cadastro de Produtos</h3>
                 <form id="form-produto" onsubmit="saveProduct(event)">
-                    <div class="form-row">
+                    <input type="hidden" id="p-id-edit"> <div class="form-row">
                         <div class="form-group"><label>Nome do Produto</label><input type="text" id="p-nome" required></div>
                         <div class="form-group"><label>Medida</label><select id="p-unidade"><option value="Unid">Unidade</option><option value="Cx">Caixa</option></select></div>
                         <div class="form-group"><label>Preço Sugerido</label><input type="number" step="0.01" id="p-preco"></div>
-                        <div class="form-group" style="justify-content: flex-end;"><button type="submit" class="btn btn-primary">Salvar Produto</button></div>
+                        <div class="form-group" style="justify-content: flex-end;"><button type="submit" class="btn btn-primary" id="btn-prod-save">Salvar Produto</button></div>
                     </div>
                 </form>
             </div>
@@ -129,8 +129,7 @@
             <div class="card">
                 <h3>Cadastro de Clientes</h3>
                 <form id="form-cliente" onsubmit="saveClient(event)">
-                    <input type="hidden" id="c-id-edit">
-                    <div class="form-row">
+                    <input type="hidden" id="c-id-edit"> <div class="form-row">
                         <div class="form-group"><label>Nome Completo</label><input type="text" id="c-nome" required></div>
                         <div class="form-group"><label>Prazo (Dias)</label><input type="number" id="c-prazo" value="30"></div>
                         <div class="form-group" style="justify-content: flex-end;"><button type="submit" class="btn btn-primary" id="btn-cli-save">Salvar Cliente</button></div>
@@ -168,7 +167,8 @@
                 <button onclick="closeSaleModal()" style="font-size:1.5rem; border:none; background:none; cursor:pointer">&times;</button>
             </div>
             <form id="form-venda" onsubmit="executeSale(event)">
-                <input type="hidden" id="v-id-edit"> <div class="form-row">
+                <input type="hidden" id="v-id-edit">
+                <div class="form-row">
                     <div class="form-group"><label>Vendedor</label><input type="text" id="v-vendedor" required></div>
                     <div class="form-group"><label>Tipo</label><select id="v-tipo"><option value="Venda">Venda</option><option value="Reposição">Reposição</option></select></div>
                     <div class="form-group"><label>Cliente</label><select id="v-cliente" required></select></div>
@@ -222,15 +222,112 @@
             if(page === 'acerto') renderAcerto();
         }
 
+        // --- LÓGICA DE PRODUTOS (CRIAR E EDITAR) ---
+        function saveProduct(e) {
+            e.preventDefault();
+            const idEdit = document.getElementById('p-id-edit').value;
+            const pNome = document.getElementById('p-nome').value;
+            const pUnidade = document.getElementById('p-unidade').value;
+            const pPreco = parseFloat(document.getElementById('p-preco').value) || 0;
+
+            if (idEdit) {
+                const index = db.produtos.findIndex(p => p.id == idEdit);
+                if (index > -1) {
+                    db.produtos[index] = { ...db.produtos[index], nome: pNome, unidade: pUnidade, preco: pPreco };
+                    alert("Produto atualizado com sucesso!");
+                }
+            } else {
+                db.produtos.push({ id: Date.now(), nome: pNome, unidade: pUnidade, preco: pPreco });
+            }
+
+            saveDB();
+            renderProducts();
+            e.target.reset();
+            document.getElementById('p-id-edit').value = '';
+            document.getElementById('btn-prod-save').innerText = 'Salvar Produto';
+        }
+
+        function editProduct(id) {
+            const p = db.produtos.find(p => p.id === id);
+            if (!p) return;
+            document.getElementById('p-id-edit').value = p.id;
+            document.getElementById('p-nome').value = p.nome;
+            document.getElementById('p-unidade').value = p.unidade;
+            document.getElementById('p-preco').value = p.preco;
+            document.getElementById('btn-prod-save').innerText = 'Atualizar Produto';
+            window.scrollTo(0,0);
+        }
+
+        function renderProducts() { 
+            document.getElementById('prod-table-body').innerHTML = db.produtos.map(p => `
+                <tr>
+                    <td>#${p.id}</td><td>${p.nome}</td><td>${p.unidade}</td><td>R$ ${p.preco.toFixed(2)}</td>
+                    <td>
+                        <button class="btn btn-info" onclick="editProduct(${p.id})" style="padding:4px" title="Editar">✏️</button>
+                        <button class="btn btn-danger" onclick="deleteProd(${p.id})" style="padding:4px" title="Excluir">X</button>
+                    </td>
+                </tr>
+            `).join('');
+            document.getElementById('v-prod-select').innerHTML = '<option value="">Selecione...</option>' + db.produtos.map(p => `<option value="${p.id}">${p.nome}</option>`).join('');
+        }
+        function deleteProd(id) { if(confirm('Excluir produto?')) { db.produtos = db.produtos.filter(p => p.id !== id); saveDB(); renderProducts(); } }
+        
+        // --- LÓGICA DE CLIENTES (CRIAR E EDITAR) ---
+        function saveClient(e) {
+            e.preventDefault();
+            const idEdit = document.getElementById('c-id-edit').value;
+            const cNome = document.getElementById('c-nome').value;
+            const cPrazo = parseInt(document.getElementById('c-prazo').value) || 0;
+
+            if (idEdit) {
+                const index = db.clientes.findIndex(c => c.id == idEdit);
+                if (index > -1) {
+                    db.clientes[index] = { ...db.clientes[index], nome: cNome, prazo: cPrazo };
+                    alert("Cliente atualizado com sucesso!");
+                }
+            } else {
+                db.clientes.push({ id: Date.now(), nome: cNome, prazo: cPrazo });
+            }
+
+            saveDB();
+            renderClients();
+            e.target.reset();
+            document.getElementById('c-id-edit').value = '';
+            document.getElementById('btn-cli-save').innerText = 'Salvar Cliente';
+        }
+
+        function editClient(id) {
+            const c = db.clientes.find(c => c.id === id);
+            if (!c) return;
+            document.getElementById('c-id-edit').value = c.id;
+            document.getElementById('c-nome').value = c.nome;
+            document.getElementById('c-prazo').value = c.prazo;
+            document.getElementById('btn-cli-save').innerText = 'Atualizar Cliente';
+            window.scrollTo(0,0);
+        }
+
+        function renderClients() { 
+            document.getElementById('cli-table-body').innerHTML = db.clientes.map(c => `
+                <tr>
+                    <td>#${c.id}</td><td>${c.nome}</td><td>${c.prazo}d</td>
+                    <td>
+                        <button class="btn btn-info" onclick="editClient(${c.id})" style="padding:4px" title="Editar">✏️</button>
+                        <button class="btn btn-danger" onclick="deleteClient(${c.id})" style="padding:4px" title="Excluir">X</button>
+                    </td>
+                </tr>
+            `).join('');
+            document.getElementById('v-cliente').innerHTML = '<option value="">Selecione...</option>' + db.clientes.map(c => `<option value="${c.id}">${c.nome}</option>`).join('');
+        }
+        function deleteClient(id) { if(confirm('Excluir cliente?')) { db.clientes = db.clientes.filter(c => c.id !== id); saveDB(); renderClients(); } }
+
+        // --- LÓGICA DE VENDAS E INTERFACE ---
         function toggleCanceladas() {
             verCanceladasGlobal = !verCanceladasGlobal;
             const btn = document.getElementById('btn-toggle-canceladas');
             if(verCanceladasGlobal) {
-                btn.innerText = "Ver Apenas Ativas";
-                btn.classList.add('active');
+                btn.innerText = "Ver Apenas Ativas"; btn.classList.add('active');
             } else {
-                btn.innerText = "Ver Canceladas";
-                btn.classList.remove('active');
+                btn.innerText = "Ver Canceladas"; btn.classList.remove('active');
             }
             renderSales();
         }
@@ -252,7 +349,6 @@
                 return matchBusca && matchData;
             }).reverse();
 
-            // Adicionado botão de Editar (✏️) na coluna de ações
             tbody.innerHTML = filtradas.map(v => `
                 <tr style="${v.status === 'Cancelada' ? 'background: #fff5f5' : ''}">
                     <td>#${v.id}</td>
@@ -283,9 +379,7 @@
                     <td>R$ ${v.total.toFixed(2)}</td>
                     <td>
                         <select id="metodo-acerto-${v.id}">
-                            <option value="Dinheiro">Dinheiro</option>
-                            <option value="PIX">PIX</option>
-                            <option value="Cartão">Cartão</option>
+                            <option value="Dinheiro">Dinheiro</option><option value="PIX">PIX</option><option value="Cartão">Cartão</option>
                         </select>
                     </td>
                     <td><button class="btn btn-success" onclick="liquidar(${v.id})" style="padding:4px 8px">Dar Baixa</button></td>
@@ -297,30 +391,10 @@
             const metodo = document.getElementById(`metodo-acerto-${id}`).value;
             if(confirm(`Confirmar recebimento via ${metodo}?`)) {
                 const v = db.vendas.find(v => v.id === id);
-                if(v) {
-                    v.pagamento = `Acertado (${metodo})`; 
-                    saveDB();
-                    renderAcerto();
-                    alert("Baixa realizada com sucesso!");
-                }
+                if(v) { v.pagamento = `Acertado (${metodo})`; saveDB(); renderAcerto(); alert("Baixa realizada com sucesso!"); }
             }
         }
 
-        function saveProduct(e) { e.preventDefault(); db.produtos.push({ id: Date.now(), nome: document.getElementById('p-nome').value, unidade: document.getElementById('p-unidade').value, preco: parseFloat(document.getElementById('p-preco').value) || 0 }); saveDB(); renderProducts(); e.target.reset(); }
-        function renderProducts() { 
-            document.getElementById('prod-table-body').innerHTML = db.produtos.map(p => `<tr><td>#${p.id}</td><td>${p.nome}</td><td>${p.unidade}</td><td>R$ ${p.preco.toFixed(2)}</td><td><button onclick="deleteProd(${p.id})">X</button></td></tr>`).join('');
-            document.getElementById('v-prod-select').innerHTML = '<option value="">Selecione...</option>' + db.produtos.map(p => `<option value="${p.id}">${p.nome}</option>`).join('');
-        }
-        function deleteProd(id) { db.produtos = db.produtos.filter(p => p.id !== id); saveDB(); renderProducts(); }
-        
-        function saveClient(e) { e.preventDefault(); db.clientes.push({ id: Date.now(), nome: document.getElementById('c-nome').value, prazo: parseInt(document.getElementById('c-prazo').value) }); saveDB(); renderClients(); e.target.reset(); }
-        function renderClients() { 
-            document.getElementById('cli-table-body').innerHTML = db.clientes.map(c => `<tr><td>#${c.id}</td><td>${c.nome}</td><td>${c.prazo}d</td><td><button onclick="deleteClient(${c.id})">X</button></td></tr>`).join('');
-            document.getElementById('v-cliente').innerHTML = '<option value="">Selecione...</option>' + db.clientes.map(c => `<option value="${c.id}">${c.nome}</option>`).join('');
-        }
-        function deleteClient(id) { db.clientes = db.clientes.filter(c => c.id !== id); saveDB(); renderClients(); }
-
-        // --- LÓGICA DE ABRIR E EDITAR VENDAS ---
         function openSaleModal() { 
             if(db.produtos.length === 0 || db.clientes.length === 0) return alert('Cadastre produto e cliente!'); 
             document.getElementById('form-venda').reset();
@@ -355,12 +429,10 @@
         }
 
         function closeSaleModal() { document.getElementById('modal-venda').style.display = 'none'; }
-        
         function autoFillProduct() { const p = db.produtos.find(p => p.id == document.getElementById('v-prod-select').value); if(p) { document.getElementById('v-unit').value = p.preco; calcSaleTotal(); } }
         function calcSaleTotal() { const total = (parseFloat(document.getElementById('v-qtd').value) * parseFloat(document.getElementById('v-unit').value)) + parseFloat(document.getElementById('v-acres').value) - parseFloat(document.getElementById('v-desc').value); document.getElementById('v-total-txt').innerText = total.toFixed(2); return total; }
         function toggleCheque() { document.getElementById('div-cheque').classList.toggle('hidden', document.getElementById('v-pgto').value !== 'Cheque'); }
 
-        // --- LÓGICA DE SALVAMENTO (NOVA OU EDIÇÃO) ---
         function executeSale(e) {
             e.preventDefault();
             const idEdit = document.getElementById('v-id-edit').value;
@@ -379,41 +451,24 @@
             const baseData = {
                 vendedor: document.getElementById('v-vendedor').value, 
                 tipo: document.getElementById('v-tipo').value,
-                cliente: cliente.nome, 
-                clienteId: cliente.id, 
-                prodId: prodId,
-                qtd: document.getElementById('v-qtd').value,
-                unit: document.getElementById('v-unit').value,
-                acres: document.getElementById('v-acres').value,
-                desc: document.getElementById('v-desc').value,
-                total: total, 
-                pagamento: pgto, 
+                cliente: cliente.nome, clienteId: cliente.id, prodId: prodId,
+                qtd: document.getElementById('v-qtd').value, unit: document.getElementById('v-unit').value,
+                acres: document.getElementById('v-acres').value, desc: document.getElementById('v-desc').value,
+                total: total, pagamento: pgto, 
                 vencimento: pgto === 'Prazo em Carteira' ? d.toISOString().split('T')[0] : null, 
-                status: 'Ativa', 
-                itens: produto.nome + " x" + document.getElementById('v-qtd').value 
+                status: 'Ativa', itens: produto.nome + " x" + document.getElementById('v-qtd').value 
             };
 
             if (idEdit) {
-                // Atualizar Venda Existente
                 const index = db.vendas.findIndex(v => v.id == idEdit);
-                if (index !== -1) {
-                    db.vendas[index] = { ...db.vendas[index], ...baseData };
-                    alert("Venda atualizada com sucesso!");
-                }
+                if (index !== -1) { db.vendas[index] = { ...db.vendas[index], ...baseData }; alert("Venda atualizada!"); }
             } else {
-                // Criar Nova Venda
-                const novaVenda = { 
-                    id: db.vendas.length > 0 ? Math.max(...db.vendas.map(v => v.id)) + 1 : 1000, 
-                    data: new Date().toISOString(), 
-                    ...baseData 
-                };
+                const novaVenda = { id: db.vendas.length > 0 ? Math.max(...db.vendas.map(v => v.id)) + 1 : 1000, data: new Date().toISOString(), ...baseData };
                 db.vendas.push(novaVenda);
                 if(confirm('Venda realizada! Imprimir recibo?')) printReceipt(novaVenda.id);
             }
 
-            saveDB(); 
-            closeSaleModal(); 
-            renderSales();
+            saveDB(); closeSaleModal(); renderSales();
         }
 
         function cancelSale(id) { if(confirm('Cancelar venda?')) { db.vendas.find(v => v.id === id).status = 'Cancelada'; saveDB(); renderSales(); } }
