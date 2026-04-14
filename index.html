@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Vendas Pro v3</title>
+    <title>Sistema de Vendas Pro v4</title>
     <style>
-        :root { --primary: #2563eb; --success: #10b981; --danger: #ef4444; --warning: #f59e0b; --bg: #f3f4f6; --text: #1f2937; }
+        :root { --primary: #2563eb; --success: #10b981; --danger: #ef4444; --warning: #f59e0b; --bg: #f3f4f6; --text: #1f2937; --info: #0ea5e9; }
         body { font-family: 'Segoe UI', system-ui, sans-serif; margin: 0; background-color: var(--bg); color: var(--text); }
         
         header { background: var(--primary); color: white; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; }
@@ -31,6 +31,7 @@
         .btn-primary { background: var(--primary); color: white; }
         .btn-success { background: var(--success); color: white; }
         .btn-danger { background: var(--danger); color: white; }
+        .btn-info { background: var(--info); color: white; }
         .btn-ghost { background: #e5e7eb; color: var(--text); }
         .btn-outline { border: 1px solid var(--primary); color: var(--primary); background: transparent; }
         .btn-outline.active { background: var(--primary); color: white; }
@@ -163,11 +164,11 @@
     <div class="modal-overlay" id="modal-venda">
         <div class="modal">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem">
-                <h2 style="margin:0">Nova Venda</h2>
+                <h2 id="modal-title-venda" style="margin:0">Nova Venda</h2>
                 <button onclick="closeSaleModal()" style="font-size:1.5rem; border:none; background:none; cursor:pointer">&times;</button>
             </div>
             <form id="form-venda" onsubmit="executeSale(event)">
-                <div class="form-row">
+                <input type="hidden" id="v-id-edit"> <div class="form-row">
                     <div class="form-group"><label>Vendedor</label><input type="text" id="v-vendedor" required></div>
                     <div class="form-group"><label>Tipo</label><select id="v-tipo"><option value="Venda">Venda</option><option value="Reposição">Reposição</option></select></div>
                     <div class="form-group"><label>Cliente</label><select id="v-cliente" required></select></div>
@@ -189,7 +190,7 @@
                 <div id="div-cheque" class="hidden"><input type="text" id="v-cheque-info" placeholder="Info do Cheque"></div>
                 <div style="display:flex; justify-content:space-between; align-items:center; background:#1e293b; color:white; padding:1.5rem; border-radius:8px">
                     <div><span style="font-size:0.9rem; opacity:0.8">TOTAL</span><br><b style="font-size:1.8rem">R$ <span id="v-total-txt">0,00</span></b></div>
-                    <button type="submit" class="btn btn-success">FINALIZAR</button>
+                    <button type="submit" class="btn btn-success" id="btn-save-venda">FINALIZAR</button>
                 </div>
             </form>
         </div>
@@ -221,7 +222,6 @@
             if(page === 'acerto') renderAcerto();
         }
 
-        // --- FILTRO DE CANCELADAS ---
         function toggleCanceladas() {
             verCanceladasGlobal = !verCanceladasGlobal;
             const btn = document.getElementById('btn-toggle-canceladas');
@@ -235,7 +235,6 @@
             renderSales();
         }
 
-        // --- RENDERIZAR VENDAS (MUDANÇA NO FILTRO) ---
         function renderSales() {
             const tbody = document.getElementById('sales-table-body');
             const busca = document.getElementById('f-busca').value.toLowerCase();
@@ -247,14 +246,13 @@
                 const matchBusca = v.cliente.toLowerCase().includes(busca) || v.id.toString().includes(busca);
                 const matchData = (!inicio || dataV >= inicio) && (!fim || dataV <= fim);
                 
-                // Lógica principal: Se verCanceladasGlobal for falso, oculta as canceladas
                 if (!verCanceladasGlobal && v.status === 'Cancelada') return false;
-                // Se verCanceladasGlobal for verdadeiro, mostra apenas as canceladas para facilitar a busca
                 if (verCanceladasGlobal && v.status !== 'Cancelada') return false;
 
                 return matchBusca && matchData;
             }).reverse();
 
+            // Adicionado botão de Editar (✏️) na coluna de ações
             tbody.innerHTML = filtradas.map(v => `
                 <tr style="${v.status === 'Cancelada' ? 'background: #fff5f5' : ''}">
                     <td>#${v.id}</td>
@@ -264,15 +262,15 @@
                     <td>${v.pagamento}</td>
                     <td><span class="badge ${v.status === 'Ativa' ? 'badge-success' : 'badge-danger'}">${v.status}</span></td>
                     <td>
-                        <button class="btn btn-ghost" onclick="printReceipt(${v.id})">🖨️</button>
-                        ${v.status === 'Ativa' ? `<button class="btn btn-danger" onclick="cancelSale(${v.id})" style="padding:4px">Cancelar</button>` : ''}
+                        <button class="btn btn-ghost" onclick="printReceipt(${v.id})" title="Imprimir">🖨️</button>
+                        ${v.status === 'Ativa' ? `<button class="btn btn-info" onclick="editSale(${v.id})" style="padding:4px" title="Editar">✏️</button>` : ''}
+                        ${v.status === 'Ativa' ? `<button class="btn btn-danger" onclick="cancelSale(${v.id})" style="padding:4px" title="Cancelar">X</button>` : ''}
                     </td>
                 </tr>
             `).join('');
             updateDashboard();
         }
 
-        // --- ACERTO DE CONTAS (MUDANÇA NO MÉTODO) ---
         function renderAcerto() {
             const tbody = document.getElementById('acerto-table-body');
             const prazo = db.vendas.filter(v => v.pagamento === 'Prazo em Carteira' && v.status === 'Ativa');
@@ -300,7 +298,7 @@
             if(confirm(`Confirmar recebimento via ${metodo}?`)) {
                 const v = db.vendas.find(v => v.id === id);
                 if(v) {
-                    v.pagamento = `Acertado (${metodo})`; // Atualiza a forma original para a forma paga
+                    v.pagamento = `Acertado (${metodo})`; 
                     saveDB();
                     renderAcerto();
                     alert("Baixa realizada com sucesso!");
@@ -308,7 +306,6 @@
             }
         }
 
-        // --- RESTANTE DAS FUNÇÕES (PRODUTOS, CLIENTES, ETC) ---
         function saveProduct(e) { e.preventDefault(); db.produtos.push({ id: Date.now(), nome: document.getElementById('p-nome').value, unidade: document.getElementById('p-unidade').value, preco: parseFloat(document.getElementById('p-preco').value) || 0 }); saveDB(); renderProducts(); e.target.reset(); }
         function renderProducts() { 
             document.getElementById('prod-table-body').innerHTML = db.produtos.map(p => `<tr><td>#${p.id}</td><td>${p.nome}</td><td>${p.unidade}</td><td>R$ ${p.preco.toFixed(2)}</td><td><button onclick="deleteProd(${p.id})">X</button></td></tr>`).join('');
@@ -323,22 +320,104 @@
         }
         function deleteClient(id) { db.clientes = db.clientes.filter(c => c.id !== id); saveDB(); renderClients(); }
 
-        function openSaleModal() { if(db.produtos.length === 0 || db.clientes.length === 0) return alert('Cadastre produto e cliente!'); document.getElementById('modal-venda').style.display = 'flex'; }
+        // --- LÓGICA DE ABRIR E EDITAR VENDAS ---
+        function openSaleModal() { 
+            if(db.produtos.length === 0 || db.clientes.length === 0) return alert('Cadastre produto e cliente!'); 
+            document.getElementById('form-venda').reset();
+            document.getElementById('v-id-edit').value = '';
+            document.getElementById('modal-title-venda').innerText = "Nova Venda";
+            document.getElementById('btn-save-venda').innerText = "FINALIZAR NOVA VENDA";
+            document.getElementById('v-total-txt').innerText = "0.00";
+            document.getElementById('modal-venda').style.display = 'flex'; 
+        }
+
+        function editSale(id) {
+            const v = db.vendas.find(v => v.id === id);
+            if(!v) return;
+
+            document.getElementById('v-id-edit').value = v.id;
+            document.getElementById('v-vendedor').value = v.vendedor || '';
+            document.getElementById('v-tipo').value = v.tipo || 'Venda';
+            document.getElementById('v-cliente').value = v.clienteId || '';
+            document.getElementById('v-prod-select').value = v.prodId || '';
+            document.getElementById('v-qtd').value = v.qtd || 1;
+            document.getElementById('v-unit').value = v.unit || 0;
+            document.getElementById('v-acres').value = v.acres || 0;
+            document.getElementById('v-desc').value = v.desc || 0;
+            document.getElementById('v-pgto').value = v.pagamento || 'Dinheiro';
+
+            toggleCheque();
+            calcSaleTotal();
+
+            document.getElementById('modal-title-venda').innerText = "Editar Venda #" + v.id;
+            document.getElementById('btn-save-venda').innerText = "SALVAR ALTERAÇÕES";
+            document.getElementById('modal-venda').style.display = 'flex';
+        }
+
         function closeSaleModal() { document.getElementById('modal-venda').style.display = 'none'; }
+        
         function autoFillProduct() { const p = db.produtos.find(p => p.id == document.getElementById('v-prod-select').value); if(p) { document.getElementById('v-unit').value = p.preco; calcSaleTotal(); } }
         function calcSaleTotal() { const total = (parseFloat(document.getElementById('v-qtd').value) * parseFloat(document.getElementById('v-unit').value)) + parseFloat(document.getElementById('v-acres').value) - parseFloat(document.getElementById('v-desc').value); document.getElementById('v-total-txt').innerText = total.toFixed(2); return total; }
         function toggleCheque() { document.getElementById('div-cheque').classList.toggle('hidden', document.getElementById('v-pgto').value !== 'Cheque'); }
 
+        // --- LÓGICA DE SALVAMENTO (NOVA OU EDIÇÃO) ---
         function executeSale(e) {
             e.preventDefault();
-            const cliente = db.clientes.find(c => c.id == document.getElementById('v-cliente').value);
+            const idEdit = document.getElementById('v-id-edit').value;
+            const cliId = document.getElementById('v-cliente').value;
+            const prodId = document.getElementById('v-prod-select').value;
+            
+            if(!cliId || !prodId) return alert('Selecione cliente e produto!');
+
+            const cliente = db.clientes.find(c => c.id == cliId);
+            const produto = db.produtos.find(p => p.id == prodId);
             const total = calcSaleTotal();
+            const pgto = document.getElementById('v-pgto').value;
+            
             let d = new Date(); d.setDate(d.getDate() + (cliente.prazo || 0));
-            const venda = { id: db.vendas.length + 1000, data: new Date().toISOString(), vendedor: document.getElementById('v-vendedor').value, cliente: cliente.nome, clienteId: cliente.id, total: total, pagamento: document.getElementById('v-pgto').value, vencimento: document.getElementById('v-pgto').value === 'Prazo em Carteira' ? d.toISOString().split('T')[0] : null, status: 'Ativa', itens: document.getElementById('v-prod-select').options[document.getElementById('v-prod-select').selectedIndex].text + " x" + document.getElementById('v-qtd').value };
-            db.vendas.push(venda); saveDB(); closeSaleModal(); renderSales();
+            
+            const baseData = {
+                vendedor: document.getElementById('v-vendedor').value, 
+                tipo: document.getElementById('v-tipo').value,
+                cliente: cliente.nome, 
+                clienteId: cliente.id, 
+                prodId: prodId,
+                qtd: document.getElementById('v-qtd').value,
+                unit: document.getElementById('v-unit').value,
+                acres: document.getElementById('v-acres').value,
+                desc: document.getElementById('v-desc').value,
+                total: total, 
+                pagamento: pgto, 
+                vencimento: pgto === 'Prazo em Carteira' ? d.toISOString().split('T')[0] : null, 
+                status: 'Ativa', 
+                itens: produto.nome + " x" + document.getElementById('v-qtd').value 
+            };
+
+            if (idEdit) {
+                // Atualizar Venda Existente
+                const index = db.vendas.findIndex(v => v.id == idEdit);
+                if (index !== -1) {
+                    db.vendas[index] = { ...db.vendas[index], ...baseData };
+                    alert("Venda atualizada com sucesso!");
+                }
+            } else {
+                // Criar Nova Venda
+                const novaVenda = { 
+                    id: db.vendas.length > 0 ? Math.max(...db.vendas.map(v => v.id)) + 1 : 1000, 
+                    data: new Date().toISOString(), 
+                    ...baseData 
+                };
+                db.vendas.push(novaVenda);
+                if(confirm('Venda realizada! Imprimir recibo?')) printReceipt(novaVenda.id);
+            }
+
+            saveDB(); 
+            closeSaleModal(); 
+            renderSales();
         }
 
         function cancelSale(id) { if(confirm('Cancelar venda?')) { db.vendas.find(v => v.id === id).status = 'Cancelada'; saveDB(); renderSales(); } }
+        
         function updateDashboard() {
             const hoje = new Date().toISOString().split('T')[0];
             const tHoje = db.vendas.filter(v => v.data.startsWith(hoje) && v.status === 'Ativa').reduce((acc, v) => acc + v.total, 0);
