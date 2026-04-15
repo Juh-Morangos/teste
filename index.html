@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Vendas Pro v9.8 - Sistema de Crédito e Troco</title>
+    <title>Sistema de Vendas Pro v9.9 - Pagamentos Múltiplos e Inteligentes</title>
     <style>
         :root { --primary: #2563eb; --success: #10b981; --danger: #ef4444; --warning: #f59e0b; --bg: #f3f4f6; --text: #1f2937; --info: #0ea5e9; }
         body { font-family: 'Segoe UI', system-ui, sans-serif; margin: 0; background-color: var(--bg); color: var(--text); }
@@ -93,7 +93,6 @@
     </header>
 
     <div class="container no-print">
-        
         <div id="dash-summary" class="dash-grid">
             <div class="dash-card"><h4>Vendas Hoje</h4><span class="value" id="dash-hoje">R$ 0,00</span></div>
             <div class="dash-card" style="border-left-color: var(--success)"><h4>Faturamento Mês</h4><span class="value" id="dash-mes">R$ 0,00</span></div>
@@ -105,7 +104,6 @@
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 15px;">
                     <h3 style="margin:0">Vendas</h3>
                     <div style="display:flex; gap: 10px; flex-wrap: wrap; align-items: center;">
-                        
                         <div style="display: flex; gap: 5px; background: #f8fafc; padding: 5px 8px; border-radius: 6px; border: 1px solid #cbd5e1; align-items: center;">
                             <span style="font-size: 0.8rem; color: #64748b; font-weight: 600; margin-right: 5px;">AÇÕES:</span>
                             <button class="btn btn-ghost" onclick="imprimirSelecionados('cliente')" style="padding:4px 8px; font-size:1.1rem; background:white;" title="Via do Cliente (Com Preço)">🖨️👤</button>
@@ -113,9 +111,7 @@
                             <button class="btn btn-info" onclick="editarSelecionado()" style="padding:4px 8px; font-size:1.1rem;" title="Editar Venda">✏️</button>
                             <button class="btn btn-danger" onclick="cancelarSelecionados()" style="padding:4px 8px; font-size:1.1rem;" title="Cancelar Venda">❌</button>
                         </div>
-                        
                         <div style="border-left: 1px solid #cbd5e1; height: 30px; margin: 0 5px;"></div>
-
                         <button class="btn btn-ghost" onclick="abrirModalImpressaoAgrupada()">🖨️ Relatório Lote</button>
                         <button id="btn-toggle-canceladas" class="btn btn-outline" onclick="toggleCanceladas()">Ver Canceladas</button>
                         <button class="btn btn-success" onclick="openSaleModal()">+ Nova Venda (F1)</button>
@@ -125,25 +121,8 @@
                 <div class="form-row">
                     <div class="form-group"><label>De:</label><input type="date" id="f-inicio" onchange="renderSales()"></div>
                     <div class="form-group"><label>Até:</label><input type="date" id="f-fim" onchange="renderSales()"></div>
-                    <div class="form-group">
-                        <label>Vendedor:</label>
-                        <select id="f-vendedor" onchange="renderSales()">
-                            <option value="">Todos</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Pagamento:</label>
-                        <select id="f-pgto" onchange="renderSales()">
-                            <option value="">Todos</option>
-                            <option value="Dinheiro">Dinheiro</option>
-                            <option value="PIX">PIX</option>
-                            <option value="Cartão Débito">Cartão Débito</option>
-                            <option value="Cartão Crédito">Cartão Crédito</option>
-                            <option value="Misto">Misto</option>
-                            <option value="Prazo em Carteira">Prazo</option>
-                            <option value="Cheque">Cheque</option>
-                        </select>
-                    </div>
+                    <div class="form-group"><label>Vendedor:</label><select id="f-vendedor" onchange="renderSales()"><option value="">Todos</option></select></div>
+                    <div class="form-group"><label>Pagamento:</label><input type="text" id="f-pgto" placeholder="Filtrar por meio de pgto..." onkeyup="renderSales()"></div>
                     <div class="form-group"><label>Pesquisar:</label><input type="text" id="f-busca" placeholder="Cliente ou Nº" onkeyup="renderSales()"></div>
                 </div>
                 <div style="overflow-x: auto;">
@@ -156,7 +135,7 @@
                                 <th>Cliente</th>
                                 <th>Vendedor</th>
                                 <th>Total</th>
-                                <th>Pagamento</th>
+                                <th>Resumo de Pagamento</th>
                                 <th>Status</th>
                             </tr>
                         </thead>
@@ -219,7 +198,6 @@
 
         <section id="acerto" class="page">
             <div class="card">
-                
                 <div class="tab-container">
                     <button class="tab-btn active-tab" id="btn-tab-pendentes" onclick="switchAcertoTab('pendentes')">📋 Contas a Receber</button>
                     <button class="tab-btn" id="btn-tab-historico" onclick="switchAcertoTab('historico')">📑 Registro de Acertos (Baixas)</button>
@@ -231,16 +209,12 @@
                             <h3 style="margin:0">Contas Pendentes</h3>
                             <p style="font-size: 0.85rem; color: #666; margin-top: 5px; margin-bottom: 0;">Selecione as contas para fechar o pagamento.</p>
                         </div>
-                        
                         <div style="display:flex; gap: 10px; flex-wrap: wrap; align-items: center;">
                             <div style="display: flex; gap: 5px; background: #f8fafc; padding: 5px 8px; border-radius: 6px; border: 1px solid #cbd5e1; align-items: center;">
-                                <span style="font-size: 0.8rem; color: #64748b; font-weight: 600; margin-right: 5px;">AÇÕES:</span>
                                 <button class="btn btn-success" onclick="abrirModalBaixa()" style="padding:4px 8px; font-size:0.9rem;" title="Dar Baixa nos selecionados">💰 Realizar Baixa</button>
                                 <button class="btn btn-ghost" onclick="cancelarBaixaSelecionados()" style="padding:4px 8px; font-size:0.9rem; color: var(--danger); border-color: var(--danger);" title="Desfazer Baixa dos selecionados">↩️ Desfazer</button>
                             </div>
-                            
-                            <div style="border-left: 1px solid #cbd5e1; height: 30px; margin: 0 5px;"></div>
-                            <button class="btn btn-ghost" onclick="imprimirRelatorioAcerto()">🖨️ Imprimir Relatório A4</button>
+                            <button class="btn btn-ghost" onclick="imprimirRelatorioAcerto()">🖨️ Imprimir A4</button>
                         </div>
                     </div>
                     
@@ -310,20 +284,24 @@
                 <h2 id="modal-title-venda" style="margin:0">Nova Venda</h2>
                 <button type="button" onclick="closeSaleModal()" style="font-size:1.5rem; border:none; background:none; cursor:pointer">&times;</button>
             </div>
+            
+            <div id="div-alerta-credito" class="hidden" style="background: #fef9c3; padding: 10px 15px; border-radius: 6px; margin-bottom: 15px; border: 1px solid #fde047; align-items: center; justify-content: space-between;">
+                <span style="color: #854d0e; font-size: 1.05rem; font-weight: bold;">
+                    ⭐ Este cliente tem R$ <span id="v-saldo-cliente">0,00</span> de crédito na loja disponível!
+                </span>
+            </div>
+
             <form id="form-venda" onsubmit="executeSale(event)">
                 <input type="hidden" id="v-id-edit">
                 
                 <div class="form-row">
-                    <div class="form-group"><label>Data</label><input type="date" id="v-data" required></div>
-                    
+                    <div class="form-group" style="max-width: 150px;"><label>Data</label><input type="date" id="v-data" required></div>
                     <div class="form-group">
                         <label>Vendedor (Cód/Nome)</label>
                         <input type="text" id="v-vendedor" list="dl-vendedores" placeholder="Ex: 1 ou Maria" required autocomplete="off" onchange="autoFillVendedor()">
                         <datalist id="dl-vendedores"></datalist>
                     </div>
-
-                    <div class="form-group"><label>Tipo</label><select id="v-tipo"><option value="Venda">Venda</option><option value="Reposição">Reposição</option></select></div>
-                    
+                    <div class="form-group" style="max-width: 150px;"><label>Tipo</label><select id="v-tipo"><option value="Venda">Venda</option><option value="Reposição">Reposição</option></select></div>
                     <div class="form-group" style="flex:2">
                         <label>Cliente (Cód/Nome)</label>
                         <input type="text" id="v-cliente" list="dl-clientes" placeholder="Ex: 10 ou João" required autocomplete="off" onchange="autoFillCliente()">
@@ -347,70 +325,67 @@
                     </div>
                     <table class="cart-table" id="tabela-carrinho" style="display: none;">
                         <thead style="background: white;">
-                            <tr><th>Código</th><th>Produto</th><th>Qtd</th><th>Valor Unit.</th><th>Total Item</th><th style="text-align: center;">Excluir</th></tr>
+                            <tr><th>Código</th><th>Produto</th><th>Qtd</th><th>Valor Unit.</th><th>Total Item</th><th style="text-align: center;">Remover</th></tr>
                         </thead>
                         <tbody id="cart-table-body" style="background: white;"></tbody>
                     </table>
                 </div>
 
                 <div class="form-row">
-                    <div class="form-group"><label>Acréscimo R$</label><input type="number" step="0.01" id="v-acres" value="0" oninput="atualizarTotalTela()"></div>
-                    <div class="form-group"><label>Desconto R$</label><input type="number" step="0.01" id="v-desc" value="0" oninput="atualizarTotalTela()"></div>
-                    <div class="form-group" style="flex:2"><label>Forma de Pagamento</label><select id="v-pgto" onchange="togglePgtoExtra()">
-                        <option value="Dinheiro">Dinheiro</option>
-                        <option value="PIX">PIX</option>
-                        <option value="Cartão Débito">Cartão Débito</option>
-                        <option value="Cartão Crédito">Cartão Crédito</option>
-                        <option value="Misto">Misto (Ex: Dinheiro + PIX)</option>
-                        <option value="Prazo em Carteira">Prazo em Carteira</option>
-                        <option value="Cheque">Cheque</option>
-                    </select></div>
-                </div>
-                
-                <div id="div-cheque" class="hidden"><input type="text" id="v-cheque-info" placeholder="Info do Cheque (Banco, Número)"></div>
-                
-                <div id="div-misto" class="hidden form-row" style="background: #e0f2fe; padding: 1rem; border-radius: 8px; margin-top: 5px; border: 1px solid #bae6fd;">
-                    <div class="form-group"><label>Método 1</label>
-                        <select id="v-misto-met1"><option value="Dinheiro">Dinheiro</option><option value="PIX">PIX</option><option value="Cartão Débito">Cartão Débito</option><option value="Cartão Crédito">Cartão Crédito</option></select>
-                    </div>
-                    <div class="form-group"><label>Valor 1 R$</label><input type="number" step="0.01" id="v-misto-val1"></div>
-                    <div class="form-group"><label style="text-align: center; color: #0ea5e9;">➕</label></div>
-                    <div class="form-group"><label>Método 2</label>
-                        <select id="v-misto-met2"><option value="PIX">PIX</option><option value="Dinheiro">Dinheiro</option><option value="Cartão Débito">Cartão Débito</option><option value="Cartão Crédito">Cartão Crédito</option></select>
-                    </div>
-                    <div class="form-group"><label>Valor 2 R$</label><input type="number" step="0.01" id="v-misto-val2"></div>
+                    <div class="form-group"><label>Acréscimo Geral R$</label><input type="number" step="0.01" id="v-acres" value="0" oninput="atualizarTotalTela()"></div>
+                    <div class="form-group"><label>Desconto Geral R$</label><input type="number" step="0.01" id="v-desc" value="0" oninput="atualizarTotalTela()"></div>
                 </div>
 
-                <div id="div-alerta-credito" class="hidden" style="background: #fef9c3; padding: 10px 15px; border-radius: 6px; margin-top: 15px; border: 1px solid #fde047; display: flex; align-items: center; gap: 10px;">
-                    <input type="checkbox" id="v-usar-credito" onchange="atualizarTotalTela()" style="width: 20px; height: 20px; cursor: pointer;">
-                    <label for="v-usar-credito" style="color: #854d0e; font-size: 1.1rem; margin: 0; cursor: pointer;">
-                        Este cliente tem <b>R$ <span id="v-saldo-cliente">0,00</span></b> de crédito em loja. Marque aqui para usar!
-                    </label>
-                </div>
-                
-                <div style="display:flex; justify-content:space-between; align-items:center; background:#1e293b; color:white; padding:1.5rem; border-radius:8px 8px 0 0; margin-top: 1rem;">
-                    <div><span style="font-size:0.9rem; opacity:0.8">A PAGAR</span><br><b style="font-size:1.8rem">R$ <span id="v-total-txt">0,00</span></b></div>
-                    <button type="submit" class="btn btn-success" id="btn-save-venda">FINALIZAR VENDA (F11)</button>
-                </div>
-
-                <div style="background:#0f172a; padding: 1.5rem; border-radius: 0 0 8px 8px; border-top: 1px solid #334155;">
-                    <div class="form-row" style="margin-bottom: 0;">
-                        <div class="form-group">
-                            <label style="color: #94a3b8;">Valor Recebido R$</label>
-                            <input type="number" step="0.01" id="v-recebido" oninput="atualizarTotalTela()" style="background: #1e293b; color: white; border: 1px solid #475569;" placeholder="O cliente deu...">
+                <div style="background:#f0fdfa; padding:1.5rem; border-radius:8px; margin:1rem 0; border: 1px solid #ccfbf1;">
+                    <h4 style="margin-top: 0; margin-bottom: 1rem; color: #0f766e;">💳 Formas de Pagamento (Múltiplas)</h4>
+                    
+                    <div class="form-row" style="align-items: flex-end;">
+                        <div class="form-group" style="flex: 2;">
+                            <label>Adicionar Forma de Pagamento:</label>
+                            <select id="v-pgto-metodo" onchange="sugerirValorPgto()" style="border-color: #0f766e;">
+                                <option value="Dinheiro">Dinheiro</option>
+                                <option value="PIX">PIX</option>
+                                <option value="Cartão Débito">Cartão Débito</option>
+                                <option value="Cartão Crédito">Cartão Crédito</option>
+                                <option value="Prazo em Carteira">Prazo em Carteira (Fica Pendente)</option>
+                                <option value="Crédito do Cliente">Usar Crédito do Cliente</option>
+                                <option value="Cheque">Cheque</option>
+                            </select>
                         </div>
-                        <div class="form-group">
-                            <label style="color: #94a3b8;">Troco R$</label>
-                            <input type="text" id="v-troco" readonly style="background: #334155; color: #10b981; font-weight: bold; border: none;">
+                        <div class="form-group" style="flex: 1;">
+                            <label>Valor R$</label>
+                            <input type="number" step="0.01" id="v-pgto-valor" style="border-color: #0f766e; font-weight: bold;" onkeyup="if(event.key==='Enter') adicionarPagamentoVenda()">
+                        </div>
+                        <div class="form-group" style="justify-content: flex-end; flex: none;">
+                            <button type="button" class="btn" style="background: #0f766e; color: white;" onclick="adicionarPagamentoVenda()">+ Lançar</button>
                         </div>
                     </div>
                     
-                    <div id="div-gerar-credito" class="hidden" style="background: #d1fae5; padding: 10px; border-radius: 6px; margin-top: 15px; border: 1px solid #a7f3d0;">
-                        <label style="color: #065f46; font-weight: bold; display: flex; align-items: center; gap: 8px; margin: 0; cursor: pointer;">
-                            <input type="checkbox" id="v-converter-credito" style="width: 18px; height: 18px;">
-                            Não devolver o troco. Guardar os R$ <span id="v-troco-txt">0,00</span> como CRÉDITO para este cliente!
-                        </label>
+                    <div id="div-cheque" class="hidden form-row" style="margin-top: -10px; margin-bottom: 15px;"><div class="form-group"><input type="text" id="v-cheque-info" placeholder="Info do Cheque (Ex: Banco do Brasil, Nº 123456)"></div></div>
+
+                    <table class="cart-table" id="tabela-pagamentos" style="display: none; background: white;">
+                        <thead>
+                            <tr style="background: #f8fafc;"><th>Método Lançado</th><th>Valor (R$)</th><th>Detalhes</th><th style="text-align: center;">Excluir</th></tr>
+                        </thead>
+                        <tbody id="lista-pagamentos-body"></tbody>
+                    </table>
+                </div>
+                
+                <div style="display:flex; justify-content:space-between; align-items:center; background:#1e293b; color:white; padding:1.5rem; border-radius:8px 8px 0 0; margin-top: 1rem; flex-wrap: wrap; gap: 15px;">
+                    <div style="display:flex; gap: 30px; flex-wrap: wrap;">
+                        <div><span style="font-size:0.85rem; opacity:0.8">TOTAL DA VENDA</span><br><b style="font-size:1.6rem">R$ <span id="v-total-txt">0,00</span></b></div>
+                        <div><span style="font-size:0.85rem; opacity:0.8">RECEBIDO (Soma)</span><br><b style="font-size:1.6rem; color: #38bdf8;">R$ <span id="v-pago-txt">0,00</span></b></div>
+                        <div id="div-falta" style="display: block;"><span style="font-size:0.85rem; opacity:0.8">FALTA RECEBER</span><br><b style="font-size:1.6rem; color: #f87171;">R$ <span id="v-falta-txt">0,00</span></b></div>
+                        <div id="div-troco" style="display: none;"><span style="font-size:0.85rem; opacity:0.8">TROCO AO CLIENTE</span><br><b style="font-size:1.6rem; color: #4ade80;">R$ <span id="v-troco-txt">0,00</span></b></div>
                     </div>
+                    <button type="submit" class="btn btn-success" id="btn-save-venda" style="font-size: 1.1rem; padding: 12px 24px;">FINALIZAR VENDA (F11)</button>
+                </div>
+
+                <div id="div-gerar-credito" class="hidden" style="background:#0f172a; padding: 1rem 1.5rem; border-radius: 0 0 8px 8px; border-top: 1px solid #334155;">
+                    <label style="color: #4ade80; font-weight: bold; display: flex; align-items: center; gap: 8px; margin: 0; cursor: pointer;">
+                        <input type="checkbox" id="v-converter-credito" style="width: 20px; height: 20px;">
+                        NÃO devolver o troco. Guardar os R$ <span id="v-troco-txt-credito">0,00</span> como CRÉDITO na conta deste cliente!
+                    </label>
                 </div>
             </form>
         </div>
@@ -424,18 +399,15 @@
             </div>
             <p style="font-size: 0.9rem; color: #666; margin-bottom: 5px;">Contas selecionadas para baixa:</p>
             <div id="lista-baixa" style="max-height: 200px; overflow-y: auto; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px; margin-bottom: 15px;"></div>
-            
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 10px; font-size: 1.2rem;">
                 <span>Falta Receber:</span>
                 <b id="total-baixa-txt" style="font-size: 1.6rem; color: var(--danger);">R$ 0,00</b>
             </div>
-
             <div id="div-baixa-parcial" style="display:none; background: #f0fdf4; padding: 10px; border-radius: 6px; border: 1px solid #bbf7d0; margin-bottom: 15px;">
                 <label style="color: #166534;">Valor Pago Agora (R$):</label>
                 <input type="number" id="v-baixa-valor" step="0.01" style="width: 100%; box-sizing: border-box; font-size: 1.1rem; padding: 8px; margin-top: 5px;">
                 <small style="color: #166534; display: block; margin-top: 5px;">* Dica: Se o cliente der a mais do que a dívida, o sistema perguntará se quer guardar de crédito.</small>
             </div>
-
             <div class="form-group" style="margin-bottom: 20px;">
                 <label>Método de Pagamento</label>
                 <select id="metodo-baixa-popup" style="font-size: 1rem; padding: 10px;">
@@ -467,16 +439,17 @@
     <script>
         const formatCurrency = (value) => { return parseFloat(value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); };
 
-        let verCanceladasGlobal = false; let filtroAcertoAtual = 'Todos'; let carrinhoAtual = []; 
+        let verCanceladasGlobal = false; let filtroAcertoAtual = 'Todos'; 
+        let carrinhoAtual = []; 
+        let pagamentosVenda = []; // NOVO ARRAY DE PAGAMENTOS MÚLTIPLOS
+
         let db = { 
             clientes: JSON.parse(localStorage.getItem('db_clientes')) || [], 
             produtos: JSON.parse(localStorage.getItem('db_produtos')) || [], 
             vendas: JSON.parse(localStorage.getItem('db_vendas')) || [],
             vendedores: JSON.parse(localStorage.getItem('db_vendedores')) || []
         };
-
-        // Garante que todo cliente antigo tenha o campo de crédito
-        db.clientes.forEach(c => { if(c.credito === undefined) c.credito = 0; });
+        db.clientes.forEach(c => { if(c.credito === undefined) c.credito = 0; }); // Garante campo crédito
 
         function saveDB() {
             localStorage.setItem('db_clientes', JSON.stringify(db.clientes));
@@ -491,7 +464,6 @@
             document.getElementById(page).classList.add('active');
             document.querySelectorAll('nav button').forEach(b => b.classList.remove('active-nav'));
             document.getElementById(`nav-${page}`).classList.add('active-nav');
-
             if(page === 'home') renderSales();
             if(page === 'produtos') renderProducts();
             if(page === 'clientes') renderClients();
@@ -502,31 +474,26 @@
         function formatInputVal(inputId, dbArray) {
             const input = document.getElementById(inputId); const val = input.value.trim(); if(!val) return null;
             let item = null;
-            if(val.includes(' - ')) { let id = parseInt(val.split(' - ')[0]); item = dbArray.find(x => x.id === id);
-            } else { if(!isNaN(val)) item = dbArray.find(x => x.id == val); if(!item) item = dbArray.find(x => x.nome.toLowerCase() === val.toLowerCase()); }
+            if(val.includes(' - ')) { let id = parseInt(val.split(' - ')[0]); item = dbArray.find(x => x.id === id); } 
+            else { if(!isNaN(val)) item = dbArray.find(x => x.id == val); if(!item) item = dbArray.find(x => x.nome.toLowerCase() === val.toLowerCase()); }
             if(item) { input.value = `${item.id} - ${item.nome}`; return item; }
             return null;
         }
 
         function autoFillVendedor() { formatInputVal('v-vendedor', db.vendedores); }
-        
+        function autoFillProduct() { const p = formatInputVal('v-prod-input', db.produtos); if(p) { document.getElementById('v-unit').value = p.preco; } }
+
         function autoFillCliente() { 
             const c = formatInputVal('v-cliente', db.clientes); 
             const divCredito = document.getElementById('div-alerta-credito');
             if(c && (c.credito || 0) > 0) {
                 document.getElementById('v-saldo-cliente').innerText = formatCurrency(c.credito);
                 divCredito.style.display = 'flex';
-                document.getElementById('v-usar-credito').checked = false; // Começa desmarcado
-            } else {
-                divCredito.style.display = 'none';
-                document.getElementById('v-usar-credito').checked = false;
-            }
+            } else { divCredito.style.display = 'none'; }
             atualizarTotalTela();
         }
-        
-        function autoFillProduct() { const p = formatInputVal('v-prod-input', db.produtos); if(p) { document.getElementById('v-unit').value = p.preco; } }
 
-        // --- CADASTROS ---
+        // --- CADASTROS BÁSICOS ---
         function saveVendedor(e) { e.preventDefault(); const idEdit = document.getElementById('vend-id-edit').value; const vCodigo = parseInt(document.getElementById('vend-codigo').value); const vNome = document.getElementById('vend-nome').value; if (idEdit) { const idx = db.vendedores.findIndex(v => v.id == idEdit); if (idx > -1) { db.vendedores[idx] = { ...db.vendedores[idx], nome: vNome }; alert("Vendedor atualizado!"); } } else { if(db.vendedores.find(v => v.id === vCodigo)) return alert("Este código já está em uso por outro vendedor!"); db.vendedores.push({ id: vCodigo, nome: vNome }); } saveDB(); renderVendedores(); e.target.reset(); document.getElementById('vend-id-edit').value = ''; document.getElementById('vend-codigo').readOnly = false; document.getElementById('btn-vend-save').innerText = 'Salvar Vendedor'; }
         function editVendedor(id) { const v = db.vendedores.find(v => v.id === id); if (!v) return; document.getElementById('vend-id-edit').value = v.id; document.getElementById('vend-codigo').value = v.id; document.getElementById('vend-codigo').readOnly = true; document.getElementById('vend-nome').value = v.nome; document.getElementById('btn-vend-save').innerText = 'Atualizar Vendedor'; window.scrollTo(0,0); }
         function renderVendedores() { document.getElementById('vend-table-body').innerHTML = db.vendedores.map(v => `<tr><td><b>${v.id}</b></td><td>${v.nome}</td><td><button type="button" class="btn btn-info" onclick="editVendedor(${v.id})" style="padding:4px">✏️</button> <button type="button" class="btn btn-danger" onclick="deleteVendedor(${v.id})" style="padding:4px">X</button></td></tr>`).join(''); document.getElementById('dl-vendedores').innerHTML = db.vendedores.map(v => `<option value="${v.id} - ${v.nome}">`).join(''); const filterOptions = '<option value="">Todos</option>' + db.vendedores.map(v => `<option value="${v.nome}">${v.nome}</option>`).join(''); document.getElementById('f-vendedor').innerHTML = filterOptions; }
@@ -547,24 +514,24 @@
         function toggleTodasVendas(source, classe = 'check-venda') { const checkboxes = document.querySelectorAll(`.${classe}`); checkboxes.forEach(cb => { cb.checked = source.checked; highlightRow(cb); }); }
         function toggleTodasContas(source) { toggleTodasVendas(source, 'check-acerto'); }
 
-        // --- DASHBOARD E VENDAS ---
+        // --- DASHBOARD E HOME ---
         function renderSales() {
-            const tbody = document.getElementById('sales-table-body'); const busca = document.getElementById('f-busca').value.toLowerCase(); const inicio = document.getElementById('f-inicio').value; const fim = document.getElementById('f-fim').value; const filtroVendedor = document.getElementById('f-vendedor').value; const filtroPgto = document.getElementById('f-pgto').value; document.getElementById('check-all-vendas').checked = false; 
+            const tbody = document.getElementById('sales-table-body'); const busca = document.getElementById('f-busca').value.toLowerCase(); const inicio = document.getElementById('f-inicio').value; const fim = document.getElementById('f-fim').value; const filtroVendedor = document.getElementById('f-vendedor').value; const filtroPgto = document.getElementById('f-pgto').value.toLowerCase(); document.getElementById('check-all-vendas').checked = false; 
 
             let filtradas = db.vendas.filter(v => {
-                const dataV = v.dataPedido ? v.dataPedido : v.data.split('T')[0];
-                const matchBusca = v.cliente.toLowerCase().includes(busca) || v.id.toString().includes(busca);
-                const matchData = (!inicio || dataV >= inicio) && (!fim || dataV <= fim);
+                const dataV = v.dataPedido ? v.dataPedido : v.data.split('T')[0]; const matchBusca = v.cliente.toLowerCase().includes(busca) || v.id.toString().includes(busca); const matchData = (!inicio || dataV >= inicio) && (!fim || dataV <= fim);
                 if (filtroVendedor && v.vendedor !== filtroVendedor) return false;
-                if (filtroPgto && !v.pagamento.includes(filtroPgto)) return false;
+                if (filtroPgto && !v.pagamento.toLowerCase().includes(filtroPgto)) return false;
                 if (!verCanceladasGlobal && v.status === 'Cancelada') return false;
                 if (verCanceladasGlobal && v.status !== 'Cancelada') return false;
                 return matchBusca && matchData;
             }).reverse();
 
             tbody.innerHTML = filtradas.map(v => {
-                const dataPedStr = v.dataPedido ? v.dataPedido.split('-').reverse().join('/') : v.data.split('T')[0].split('-').reverse().join('/'); const dataIncStr = new Date(v.data).toLocaleString('pt-BR'); let rowStyles = v.status === 'Cancelada' ? 'background: #fff5f5;' : '';
-                return `<tr style="${rowStyles}"><td style="text-align: center;"><input type="checkbox" class="check-venda" value="${v.id}" onchange="highlightRow(this)"></td><td>#${v.id}</td><td><b>${dataPedStr}</b></td><td>${v.cliente}</td><td>${v.vendedor || '-'}</td><td><b>R$ ${formatCurrency(v.total)}</b></td><td>${v.pagamento}</td><td><span class="badge ${v.status === 'Ativa' ? 'badge-success' : 'badge-danger'}">${v.status}</span></td></tr>`;
+                const dataPedStr = v.dataPedido ? v.dataPedido.split('-').reverse().join('/') : v.data.split('T')[0].split('-').reverse().join('/'); let rowStyles = v.status === 'Cancelada' ? 'background: #fff5f5;' : '';
+                // Limpeza visual do Múltiplo para a tabela
+                let pgtoVis = v.pagamento.replace(/\|/g, '<br>').replace(/Prazo em Carteira/g, '<span style="color:#f59e0b;font-weight:bold;">Prazo</span>');
+                return `<tr style="${rowStyles}"><td style="text-align: center;"><input type="checkbox" class="check-venda" value="${v.id}" onchange="highlightRow(this)"></td><td>#${v.id}</td><td><b>${dataPedStr}</b></td><td>${v.cliente}</td><td>${v.vendedor || '-'}</td><td><b>R$ ${formatCurrency(v.total)}</b></td><td style="font-size:0.8rem;">${pgtoVis}</td><td><span class="badge ${v.status === 'Ativa' ? 'badge-success' : 'badge-danger'}">${v.status}</span></td></tr>`;
             }).join('');
             updateDashboard(filtradas);
         }
@@ -573,7 +540,7 @@
             const baseVendas = vendasAtuais || db.vendas; const hoje = new Date().toISOString().split('T')[0]; const mesAtual = hoje.substring(0, 7);
             const tHoje = baseVendas.filter(v => { const d = v.dataPedido ? v.dataPedido : v.data.split('T')[0]; return d === hoje && v.status === 'Ativa'; }).reduce((acc, v) => acc + v.total, 0);
             const tMes = baseVendas.filter(v => { const d = v.dataPedido ? v.dataPedido : v.data.split('T')[0]; return d.startsWith(mesAtual) && v.status === 'Ativa'; }).reduce((acc, v) => acc + v.total, 0);
-            const tPendente = baseVendas.filter(v => (v.pagamento === 'Prazo em Carteira' || (v.vencimento !== null && !v.pagamento.includes('Acertado'))) && v.status === 'Ativa').reduce((acc, v) => acc + (v.total - (v.valorPago || 0)), 0);
+            const tPendente = baseVendas.filter(v => (v.vencimento !== null && !v.pagamento.startsWith('Acertado')) && v.status === 'Ativa').reduce((acc, v) => acc + (v.total - (v.valorPago || 0)), 0);
             
             document.getElementById('dash-hoje').innerText = `R$ ${formatCurrency(tHoje)}`;
             document.getElementById('dash-mes').innerText = `R$ ${formatCurrency(tMes)}`;
@@ -582,8 +549,8 @@
 
         function editarSelecionado() { const checks = document.querySelectorAll('.check-venda:checked'); if(checks.length !== 1) return alert("Selecione exatamente UMA venda na caixa de seleção para editar."); const idVenda = parseInt(checks[0].value); const v = db.vendas.find(v => v.id === idVenda); if(v && v.status === 'Ativa') { editSale(idVenda); } else { alert("Vendas canceladas não podem ser editadas."); } }
         function cancelarSelecionados() { const checks = document.querySelectorAll('.check-venda:checked'); if(checks.length === 0) return alert("Selecione pelo menos uma venda para cancelar."); if(confirm(`Tem certeza que deseja cancelar as ${checks.length} venda(s) selecionada(s)?`)) { checks.forEach(cb => { const id = parseInt(cb.value); const venda = db.vendas.find(v => v.id === id); if(venda) venda.status = 'Cancelada'; }); saveDB(); renderSales(); } }
+        
         function imprimirSelecionados(tipo) { const checks = document.querySelectorAll('.check-venda:checked'); if(checks.length === 0) return alert("Selecione pelo menos uma venda para imprimir o cupom."); const ids = Array.from(checks).map(cb => parseInt(cb.value)); const vendasParaImprimir = db.vendas.filter(v => ids.includes(v.id)); printReceiptMultiple(vendasParaImprimir, tipo); }
-
         function printReceiptMultiple(vendas, tipo = 'cliente') {
             document.getElementById('receipt-print').style.width = '80mm'; let allHtml = '';
             vendas.forEach((v, index) => {
@@ -593,45 +560,37 @@
                 const dataEmissao = v.dataPedido ? v.dataPedido.split('-').reverse().join('/') : v.data.split('T')[0].split('-').reverse().join('/');
                 
                 let html = `<div style="text-align:center"><h3 style="margin:0">${tipo === 'cliente' ? 'RECIBO DO CLIENTE' : 'ORDEM DE SEPARAÇÃO'}</h3><p style="margin:5px 0">Pedido Nº: ${v.id}</p><hr style="border-top:1px dashed #000; border-bottom:none;"></div><p style="margin:5px 0">Data: ${dataEmissao}</p><p style="margin:5px 0">Cliente: ${v.cliente}</p><p style="margin:5px 0">Vendedor: ${v.vendedor || '-'}</p><hr style="border-top:1px dashed #000; border-bottom:none;"><p style="margin:5px 0"><b>ITENS:</b><br><br>${listaProdutosHtml}</p><hr style="border-top:1px dashed #000; border-bottom:none;">`;
-                if (tipo === 'cliente') { if (v.acres > 0) html += `<p style="margin:5px 0">Acrescimo: R$ ${formatCurrency(v.acres)}</p>`; if (v.desc > 0) html += `<p style="margin:5px 0">Desconto: R$ ${formatCurrency(v.desc)}</p>`; html += `<h4 style="margin:10px 0; font-size:1.2em;">TOTAL: R$ ${formatCurrency(v.total)}</h4><p style="margin:5px 0">Pgto: ${v.pagamento}</p>`; if(v.pagamento === 'Prazo em Carteira' && v.valorPago > 0) { html += `<p style="margin:5px 0">Valor Recebido: R$ ${formatCurrency(v.valorPago)}<br><b>Resta: R$ ${formatCurrency(v.total - v.valorPago)}</b></p>`; } html += `<p style="margin:20px 0 5px 0; text-align:center;"><em>Obrigado pela preferencia!</em></p>`;
+                
+                if (tipo === 'cliente') { 
+                    if (v.acres > 0) html += `<p style="margin:5px 0">Acrescimo: R$ ${formatCurrency(v.acres)}</p>`; 
+                    if (v.desc > 0) html += `<p style="margin:5px 0">Desconto: R$ ${formatCurrency(v.desc)}</p>`; 
+                    html += `<h4 style="margin:10px 0; font-size:1.2em;">TOTAL: R$ ${formatCurrency(v.total)}</h4>`;
+                    
+                    // Formata os múltiplos pagamentos pro cupom
+                    let pgtoPrint = v.pagamento.replace(/\|/g, '<br>');
+                    html += `<p style="margin:5px 0"><b>Pagamentos:</b><br>${pgtoPrint}</p>`; 
+                    
+                    if(v.vencimento && v.valorPago !== undefined && v.valorPago < v.total && !v.pagamento.startsWith('Acertado')) { html += `<p style="margin:5px 0; color: #d97706;"><b>Ficou na Carteira: R$ ${formatCurrency(v.total - v.valorPago)}</b></p>`; } 
+                    html += `<p style="margin:20px 0 5px 0; text-align:center;"><em>Obrigado pela preferencia!</em></p>`;
                 } else { html += `<br><br><br><p style="margin:5px 0; text-align:center;"><em>Assinatura do Conferente:</em></p><p style="text-align:center;">___________________________</p>`; }
+                
                 if (index < vendas.length - 1) { html += '<div style="page-break-after: always;"></div>'; } allHtml += html;
             });
             document.getElementById('receipt-print').innerHTML = allHtml; window.print();
         }
 
-        function abrirModalImpressaoAgrupada() { const checks = document.querySelectorAll('.check-venda:checked'); if (checks.length === 0) return alert("Selecione pelo menos uma venda."); const idsSelecionados = Array.from(checks).map(cb => parseInt(cb.value)); const vendasParaImprimir = db.vendas.filter(v => idsSelecionados.includes(v.id)); document.getElementById('preview-relatorio-agrupado').innerHTML = gerarHTMLRelatorioAgrupado(vendasParaImprimir); document.getElementById('modal-impressao-agrupada').style.display = 'flex'; }
-        function fecharModalImpressaoAgrupada() { document.getElementById('modal-impressao-agrupada').style.display = 'none'; }
-        function confirmarImpressaoAgrupada() { document.getElementById('receipt-print').style.width = '100%'; document.getElementById('receipt-print').innerHTML = document.getElementById('preview-relatorio-agrupado').innerHTML; window.print(); setTimeout(() => { document.getElementById('receipt-print').style.width = '80mm'; }, 500); }
-
-        function gerarHTMLRelatorioAgrupado(vendas) {
-            let html = '<table class="report-table"><tbody>'; let totalGeral = 0;
-            vendas.forEach(v => {
-                totalGeral += v.total; const dPed = v.dataPedido ? v.dataPedido.split('-').reverse().join('/') : v.data.split('T')[0].split('-').reverse().join('/');
-                html += `<tr class="report-header-row"><td colspan="2"><b>${v.id} &nbsp;&nbsp;&nbsp; ${v.vendedor || ''} &nbsp; ${dPed}</b></td><td colspan="2"><b>${(v.clienteId || '0') + ' - ' + v.cliente.toUpperCase()}</b></td><td style="text-align: right;"><b>${formatCurrency(v.total)}</b></td></tr><tr class="report-item-header"><td style="width: 5%; text-align:center;">Item</td><td style="width: 45%;">Produto</td><td style="width: 15%; text-align:right;">Qtd</td><td style="width: 15%; text-align:right;">Valor</td><td style="width: 20%; text-align:right;">Total</td></tr>`;
-                if (v.carrinho && v.carrinho.length > 0) { v.carrinho.forEach((item, idx) => { html += `<tr><td style="text-align:center;">${idx + 1}</td><td>${item.prodId || '0'} - ${item.nome.toUpperCase()}</td><td style="text-align:right;">${item.qtd.toLocaleString('pt-BR', {minimumFractionDigits: 3, maximumFractionDigits: 3})}</td><td style="text-align:right;">${formatCurrency(item.unit)}</td><td style="text-align:right;">${formatCurrency(item.totalItem)}</td></tr>`; }); } else { html += `<tr><td style="text-align:center;">1</td><td colspan="4">${v.itens}</td></tr>`; }
-                html += `<tr><td colspan="5" style="padding-bottom: 10px;"></td></tr>`;
-            });
-            html += `<tr class="report-footer"><td colspan="3"></td><td style="text-align: right;">Nº Vendas: &nbsp;&nbsp; ${vendas.length} &nbsp;&nbsp;&nbsp;&nbsp; Total:</td><td style="text-align: right;">${formatCurrency(totalGeral)}</td></tr></tbody></table>`; return html;
-        }
-
-        // --- SISTEMA DE ACERTO ---
-        function switchAcertoTab(tab) {
-            document.getElementById('btn-tab-pendentes').classList.remove('active-tab'); document.getElementById('btn-tab-historico').classList.remove('active-tab'); document.getElementById('view-pendentes').style.display = 'none'; document.getElementById('view-historico').style.display = 'none';
-            if(tab === 'pendentes') { document.getElementById('btn-tab-pendentes').classList.add('active-tab'); document.getElementById('view-pendentes').style.display = 'block'; renderAcerto();
-            } else { document.getElementById('btn-tab-historico').classList.add('active-tab'); document.getElementById('view-historico').style.display = 'block'; const hoje = new Date().toISOString().split('T')[0]; if(!document.getElementById('f-hist-inicio').value) { document.getElementById('f-hist-inicio').value = hoje; document.getElementById('f-hist-fim').value = hoje; } renderHistorico(); }
-        }
-
+        // --- SISTEMA DE ACERTO DE CONTAS (INTOCADO E COMPATÍVEL) ---
+        function switchAcertoTab(tab) { document.getElementById('btn-tab-pendentes').classList.remove('active-tab'); document.getElementById('btn-tab-historico').classList.remove('active-tab'); document.getElementById('view-pendentes').style.display = 'none'; document.getElementById('view-historico').style.display = 'none'; if(tab === 'pendentes') { document.getElementById('btn-tab-pendentes').classList.add('active-tab'); document.getElementById('view-pendentes').style.display = 'block'; renderAcerto(); } else { document.getElementById('btn-tab-historico').classList.add('active-tab'); document.getElementById('view-historico').style.display = 'block'; const hoje = new Date().toISOString().split('T')[0]; if(!document.getElementById('f-hist-inicio').value) { document.getElementById('f-hist-inicio').value = hoje; document.getElementById('f-hist-fim').value = hoje; } renderHistorico(); } }
         function setFiltroAcerto(filtro) { filtroAcertoAtual = filtro; ['Todos', 'A Vencer', 'Vencidos', 'Pagas'].forEach(f => document.getElementById(`f-acerto-${f}`).classList.remove('active')); document.getElementById(`f-acerto-${filtro}`).classList.add('active'); renderAcerto(); }
         
         function renderAcerto() {
             const tbody = document.getElementById('acerto-table-body'); const hoje = new Date().toISOString().split('T')[0]; const busca = (document.getElementById('f-acerto-busca')?.value || '').toLowerCase(); const inicio = document.getElementById('f-acerto-inicio')?.value; const fim = document.getElementById('f-acerto-fim')?.value; document.getElementById('check-all-acerto').checked = false;
             let contas = db.vendas.filter(v => v.vencimento !== null && v.status === 'Ativa');
-            contas = contas.filter(v => { const isPago = v.pagamento.includes('Acertado'); const isVencido = !isPago && v.vencimento < hoje; const isAVencer = !isPago && v.vencimento >= hoje; if (filtroAcertoAtual === 'Pagas' && !isPago) return false; if (filtroAcertoAtual === 'Vencidos' && !isVencido) return false; if (filtroAcertoAtual === 'A Vencer' && !isAVencer) return false; if (busca && !v.cliente.toLowerCase().includes(busca)) return false; if (inicio && v.vencimento < inicio) return false; if (fim && v.vencimento > fim) return false; return true; });
+            contas = contas.filter(v => { const isPago = v.pagamento.startsWith('Acertado'); const isVencido = !isPago && v.vencimento < hoje; const isAVencer = !isPago && v.vencimento >= hoje; if (filtroAcertoAtual === 'Pagas' && !isPago) return false; if (filtroAcertoAtual === 'Vencidos' && !isVencido) return false; if (filtroAcertoAtual === 'A Vencer' && !isAVencer) return false; if (busca && !v.cliente.toLowerCase().includes(busca)) return false; if (inicio && v.vencimento < inicio) return false; if (fim && v.vencimento > fim) return false; return true; });
             contas.sort((a, b) => new Date(a.vencimento) - new Date(b.vencimento));
             if(contas.length === 0) { tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding: 2rem; color: #666;">Nenhuma conta encontrada.</td></tr>`; return; }
             tbody.innerHTML = contas.map(v => { 
-                const isPago = v.pagamento.includes('Acertado'); const isVencido = !isPago && v.vencimento < hoje; let rowStyle = isPago ? 'background: #f0fdf4; opacity: 0.8;' : (isVencido ? 'background: #fef2f2;' : ''); let statusBadge = isPago ? '<span class="badge badge-success">PAGO</span>' : (isVencido ? '<span class="badge badge-danger">VENCIDO</span>' : '<span class="badge badge-warning">A VENCER</span>'); 
+                const isPago = v.pagamento.startsWith('Acertado'); const isVencido = !isPago && v.vencimento < hoje; let rowStyle = isPago ? 'background: #f0fdf4; opacity: 0.8;' : (isVencido ? 'background: #fef2f2;' : ''); let statusBadge = isPago ? '<span class="badge badge-success">PAGO</span>' : (isVencido ? '<span class="badge badge-danger">VENCIDO</span>' : '<span class="badge badge-warning">A VENCER</span>'); 
                 let pgtoText = isPago ? `<span style="color: #059669; font-weight: bold;">✔ ${v.pagamento.replace('Acertado (','').replace(')','')}</span>` : '-'; 
                 let valorRestante = v.total - (v.valorPago || 0); let faltaTxt = (!isPago && (v.valorPago || 0) > 0) ? `<br><span style="font-size:0.8rem; color:var(--danger)">Falta R$ ${formatCurrency(valorRestante)}</span>` : '';
                 return `<tr style="${rowStyle}"><td style="text-align: center;"><input type="checkbox" class="check-acerto" value="${v.id}" onchange="highlightRow(this)"></td><td><b>#${v.id}</b></td><td>${v.cliente}</td><td style="${isVencido ? 'color: red; font-weight: bold;' : ''}">${v.vencimento.split('-').reverse().join('/')}</td><td><b>R$ ${formatCurrency(v.total)}</b>${faltaTxt}</td><td>${statusBadge}</td><td>${pgtoText}</td></tr>`; 
@@ -640,9 +599,7 @@
 
         function renderHistorico() {
             const tbody = document.getElementById('historico-table-body'); const busca = (document.getElementById('f-hist-busca')?.value || '').toLowerCase(); const inicio = document.getElementById('f-hist-inicio')?.value; const fim = document.getElementById('f-hist-fim')?.value;
-            let contasComPagamento = db.vendas.filter(v => (v.historicoPgto && v.historicoPgto.length > 0) || v.pagamento.includes('Acertado'));
-            let linhas = [];
-
+            let contasComPagamento = db.vendas.filter(v => (v.historicoPgto && v.historicoPgto.length > 0) || v.pagamento.startsWith('Acertado')); let linhas = [];
             contasComPagamento.forEach(v => {
                 if(v.historicoPgto && v.historicoPgto.length > 0) {
                     v.historicoPgto.forEach(pgto => { const dataPgto = pgto.data.split('T')[0]; if((!busca || v.cliente.toLowerCase().includes(busca)) && (!inicio || dataPgto >= inicio) && (!fim || dataPgto <= fim)) { linhas.push({ dataIso: pgto.data, vendaId: v.id, cliente: v.cliente, metodo: pgto.metodo, valor: pgto.valor }); } });
@@ -651,101 +608,52 @@
                 }
             });
             linhas.sort((a, b) => new Date(b.dataIso) - new Date(a.dataIso));
-            
             if(linhas.length === 0) { tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding: 2rem; color: #666;">Nenhum registro de pagamento encontrado.</td></tr>`; return; }
-            tbody.innerHTML = linhas.map(l => { 
-                const dateObj = new Date(l.dataIso); const dataFormatada = dateObj.toLocaleDateString('pt-BR'); const horaFormatada = dateObj.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'}); 
-                return `<tr><td><b>${dataFormatada}</b> <span style="color:#888; font-size:0.8rem">${horaFormatada}</span></td><td>#${l.vendaId}</td><td>${l.cliente}</td><td><span style="color: #059669; font-weight: bold;">${l.metodo}</span></td><td><b>R$ ${formatCurrency(l.valor)}</b></td><td><button class="btn btn-ghost" onclick="cancelarBaixaIndividual(${l.vendaId})" style="padding:4px 8px; font-size:0.85rem; color: var(--danger); border-color: var(--danger);" title="Desfaz TODOS os pagamentos desta venda">❌ Desfazer</button></td></tr>`; 
-            }).join('');
+            tbody.innerHTML = linhas.map(l => { const dateObj = new Date(l.dataIso); const dataFormatada = dateObj.toLocaleDateString('pt-BR'); const horaFormatada = dateObj.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'}); return `<tr><td><b>${dataFormatada}</b> <span style="color:#888; font-size:0.8rem">${horaFormatada}</span></td><td>#${l.vendaId}</td><td>${l.cliente}</td><td><span style="color: #059669; font-weight: bold;">${l.metodo}</span></td><td><b>R$ ${formatCurrency(l.valor)}</b></td><td><button class="btn btn-ghost" onclick="cancelarBaixaIndividual(${l.vendaId})" style="padding:4px 8px; font-size:0.85rem; color: var(--danger); border-color: var(--danger);">❌ Desfazer</button></td></tr>`; }).join('');
         }
 
         function abrirModalBaixa() { 
-            const checks = document.querySelectorAll('.check-acerto:checked'); 
-            if(checks.length === 0) return alert("Selecione pelo menos uma conta pendente para dar baixa."); 
-            
+            const checks = document.querySelectorAll('.check-acerto:checked'); if(checks.length === 0) return alert("Selecione pelo menos uma conta pendente para dar baixa."); 
             let listaHtml = '<ul style="list-style: none; padding: 0; margin: 0;">'; let totalFalta = 0; let jaPagas = 0; 
-            checks.forEach(cb => { 
-                const id = parseInt(cb.value); const v = db.vendas.find(v => v.id === id); 
-                if(v) { 
-                    if(!v.pagamento.includes('Acertado')) { 
-                        let restante = v.total - (v.valorPago || 0); totalFalta += restante; 
-                        listaHtml += `<li style="padding: 8px 5px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; font-size: 0.9rem;"><span><b>#${v.id}</b> - ${v.cliente}</span><b>R$ ${formatCurrency(restante)}</b></li>`; 
-                    } else { jaPagas++; } 
-                } 
-            }); 
-            listaHtml += '</ul>'; 
+            checks.forEach(cb => { const id = parseInt(cb.value); const v = db.vendas.find(v => v.id === id); if(v) { if(!v.pagamento.startsWith('Acertado')) { let restante = v.total - (v.valorPago || 0); totalFalta += restante; listaHtml += `<li style="padding: 8px 5px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; font-size: 0.9rem;"><span><b>#${v.id}</b> - ${v.cliente}</span><b>R$ ${formatCurrency(restante)}</b></li>`; } else { jaPagas++; } } }); listaHtml += '</ul>'; 
             if(totalFalta === 0 && jaPagas > 0) return alert("As contas selecionadas já estão pagas!"); 
-            
             document.getElementById('lista-baixa').innerHTML = listaHtml; document.getElementById('total-baixa-txt').innerText = `R$ ${formatCurrency(totalFalta)}`; 
-            
-            // SE SELECIONOU APENAS 1 CONTA, MOSTRA A OPÇÃO DE PAGAMENTO PARCIAL E GERAÇÃO DE CRÉDITO
-            if(checks.length === 1 && totalFalta > 0) {
-                document.getElementById('div-baixa-parcial').style.display = 'block';
-                document.getElementById('v-baixa-valor').value = totalFalta.toFixed(2);
-            } else { document.getElementById('div-baixa-parcial').style.display = 'none'; }
+            if(checks.length === 1 && totalFalta > 0) { document.getElementById('div-baixa-parcial').style.display = 'block'; document.getElementById('v-baixa-valor').value = totalFalta.toFixed(2); } else { document.getElementById('div-baixa-parcial').style.display = 'none'; }
             document.getElementById('modal-baixa').style.display = 'flex'; 
         }
 
         function fecharModalBaixa() { document.getElementById('modal-baixa').style.display = 'none'; }
-        
         function confirmarBaixaLote() { 
             const checks = document.querySelectorAll('.check-acerto:checked'); const metodo = document.getElementById('metodo-baixa-popup').value; const dataIsoAgora = new Date().toISOString(); let baixadas = 0; 
-
             if(checks.length === 1) {
-                const id = parseInt(checks[0].value); const v = db.vendas.find(v => v.id === id);
-                let restante = v.total - (v.valorPago || 0);
-                let valorInput = parseFloat(document.getElementById('v-baixa-valor').value) || 0;
-                
+                const id = parseInt(checks[0].value); const v = db.vendas.find(v => v.id === id); let restante = v.total - (v.valorPago || 0); let valorInput = parseFloat(document.getElementById('v-baixa-valor').value) || 0;
                 if(valorInput <= 0) return alert("O valor pago deve ser maior que zero.");
-                
                 let clienteUpdate = db.clientes.find(c => c.id == v.clienteId);
-
-                // LÓGICA DE GERAR CRÉDITO NO ACERTO
-                if(valorInput > restante) {
-                    let troco = valorInput - restante;
-                    if(confirm(`O cliente pagou a mais!\nA dívida era de R$ ${formatCurrency(restante)} e sobrou R$ ${formatCurrency(troco)}.\n\nDeseja transformar esse troco em CRÉDITO na loja para o cliente?`)) {
-                        clienteUpdate.credito = (clienteUpdate.credito || 0) + troco;
-                        alert(`R$ ${formatCurrency(troco)} adicionados ao crédito de ${clienteUpdate.nome}!`);
-                        valorInput = restante; // Ajusta o pagamento da dívida para o limite exato dela
-                    } else {
-                        valorInput = restante; // Cliente levou o troco fisicamente
-                    }
-                }
-
-                v.valorPago = (v.valorPago || 0) + valorInput;
-                if(!v.historicoPgto) v.historicoPgto = [];
-                v.historicoPgto.push({ data: dataIsoAgora, valor: valorInput, metodo: metodo });
-
+                if(valorInput > restante) { let troco = valorInput - restante; if(confirm(`O cliente pagou a mais!\nSobrou R$ ${formatCurrency(troco)}.\nDeseja transformar esse troco em CRÉDITO na loja para o cliente?`)) { clienteUpdate.credito = (clienteUpdate.credito || 0) + troco; alert(`Crédito adicionado!`); valorInput = restante; } else { valorInput = restante; } }
+                v.valorPago = (v.valorPago || 0) + valorInput; if(!v.historicoPgto) v.historicoPgto = []; v.historicoPgto.push({ data: dataIsoAgora, valor: valorInput, metodo: metodo });
                 if(Math.abs(v.total - v.valorPago) < 0.01) { v.pagamento = `Acertado (${metodo})`; v.dataBaixa = dataIsoAgora; }
                 baixadas++;
             } else {
-                checks.forEach(cb => { 
-                    const id = parseInt(cb.value); const v = db.vendas.find(v => v.id === id); 
-                    if(v && !v.pagamento.includes('Acertado')) { 
-                        let restante = v.total - (v.valorPago || 0); v.valorPago = v.total;
-                        if(!v.historicoPgto) v.historicoPgto = [];
-                        v.historicoPgto.push({ data: dataIsoAgora, valor: restante, metodo: metodo });
-                        v.pagamento = `Acertado (${metodo})`; v.dataBaixa = dataIsoAgora; baixadas++; 
-                    } 
-                }); 
+                checks.forEach(cb => { const id = parseInt(cb.value); const v = db.vendas.find(v => v.id === id); if(v && !v.pagamento.startsWith('Acertado')) { let restante = v.total - (v.valorPago || 0); v.valorPago = v.total; if(!v.historicoPgto) v.historicoPgto = []; v.historicoPgto.push({ data: dataIsoAgora, valor: restante, metodo: metodo }); v.pagamento = `Acertado (${metodo})`; v.dataBaixa = dataIsoAgora; baixadas++; } }); 
             }
             if(baixadas > 0) { saveDB(); fecharModalBaixa(); renderAcerto(); renderHistorico(); renderSales(); renderClients(); } 
         }
 
-        function desfazerBaixaLogica(idArray) { 
-            let desfeitas = 0; 
-            idArray.forEach(id => { const v = db.vendas.find(v => v.id === id); if(v && (v.pagamento.includes('Acertado') || (v.valorPago > 0))) { v.pagamento = 'Prazo em Carteira'; v.dataBaixa = null; v.valorPago = 0; v.historicoPgto = []; desfeitas++; } }); return desfeitas; 
-        }
-        function cancelarBaixaSelecionados() { const checks = document.querySelectorAll('.check-acerto:checked'); if(checks.length === 0) return alert("Selecione pelo menos uma conta."); if(confirm(`Desfazer os pagamentos de ${checks.length} conta(s)?`)) { const ids = Array.from(checks).map(cb => parseInt(cb.value)); const desfeitas = desfazerBaixaLogica(ids); if(desfeitas > 0) { saveDB(); renderAcerto(); renderHistorico(); renderSales(); } } }
-        function cancelarBaixaIndividual(id) { if(confirm(`DESFAZER PAGAMENTO?\nAtenção: Isso irá apagar TODOS os pagamentos registrados para esta venda.`)) { const desfeitas = desfazerBaixaLogica([id]); if(desfeitas > 0) { saveDB(); renderAcerto(); renderHistorico(); renderSales(); } } }
+        function desfazerBaixaLogica(idArray) { let desfeitas = 0; idArray.forEach(id => { const v = db.vendas.find(v => v.id === id); if(v && (v.pagamento.startsWith('Acertado') || (v.valorPago > 0))) { v.pagamento = v.pagamentosOriginal || 'Prazo em Carteira'; v.dataBaixa = null; v.valorPago = v.valorPagoOriginal || 0; v.historicoPgto = []; desfeitas++; } }); return desfeitas; }
+        function cancelarBaixaSelecionados() { const checks = document.querySelectorAll('.check-acerto:checked'); if(checks.length === 0) return alert("Selecione."); if(confirm(`Desfazer?`)) { const ids = Array.from(checks).map(cb => parseInt(cb.value)); if(desfazerBaixaLogica(ids) > 0) { saveDB(); renderAcerto(); renderHistorico(); renderSales(); } } }
+        function cancelarBaixaIndividual(id) { if(confirm(`DESFAZER PAGAMENTO?`)) { if(desfazerBaixaLogica([id]) > 0) { saveDB(); renderAcerto(); renderHistorico(); renderSales(); } } }
 
-        // --- CARRINHO E NOVA VENDA COM CRÉDITO ---
-        function togglePgtoExtra() { 
-            const val = document.getElementById('v-pgto').value;
-            document.getElementById('div-cheque').classList.toggle('hidden', val !== 'Cheque'); 
-            document.getElementById('div-misto').classList.toggle('hidden', val !== 'Misto'); 
-        }
+
+        // === NOVA CENTRAL DE PAGAMENTOS E CARRINHO ===
         
+        function sugerirValorPgto() {
+            const totais = calcularTotaisVenda();
+            const m = document.getElementById('v-pgto-metodo').value;
+            document.getElementById('div-cheque').style.display = (m === 'Cheque') ? 'flex' : 'none';
+            const inputValor = document.getElementById('v-pgto-valor');
+            if(totais.restante > 0) { inputValor.value = totais.restante.toFixed(2); } else { inputValor.value = ""; }
+        }
+
         function adicionarAoCarrinho() {
             const p = formatInputVal('v-prod-input', db.produtos);
             if(!p) return alert('Produto não encontrado!');
@@ -758,56 +666,102 @@
         }
 
         function removerDoCarrinho(index) { carrinhoAtual.splice(index, 1); renderizarCarrinhoNaTela(); }
+        
         function renderizarCarrinhoNaTela() {
             const tbody = document.getElementById('cart-table-body'); const tabelaContainer = document.getElementById('tabela-carrinho');
             if(carrinhoAtual.length === 0) { tabelaContainer.style.display = 'none'; } else {
                 tabelaContainer.style.display = 'table';
-                tbody.innerHTML = carrinhoAtual.map((item, i) => `<tr><td><b>${item.prodId || '-'}</b></td><td>${item.nome}</td><td>${item.qtd}</td><td>R$ ${formatCurrency(item.unit)}</td><td>R$ ${formatCurrency(item.totalItem)}</td><td style="text-align: center;"><button type="button" onclick="removerDoCarrinho(${i})" style="color:var(--danger); background:none; border:none; cursor:pointer; font-weight:bold; font-size:1rem;">X</button></td></tr>`).join('');
+                tbody.innerHTML = carrinhoAtual.map((item, i) => `<tr><td><b>${item.prodId || '-'}</b></td><td>${item.nome}</td><td>${item.qtd}</td><td>R$ ${formatCurrency(item.unit)}</td><td>R$ ${formatCurrency(item.totalItem)}</td><td style="text-align: center;"><button type="button" onclick="removerDoCarrinho(${i})" style="color:var(--danger); background:none; border:none; cursor:pointer; font-weight:bold; font-size:1.2rem;">&times;</button></td></tr>`).join('');
             }
             atualizarTotalTela();
         }
 
-        // LÓGICA CENTRAL DE TOTAIS, CRÉDITOS E TROCO
-        function atualizarTotalTela() { 
+        // NOVO: Adiciona um método de pagamento na lista
+        function adicionarPagamentoVenda(metodoForcado = null, valorForcado = null) {
+            const metodo = metodoForcado || document.getElementById('v-pgto-metodo').value;
+            let valor = valorForcado !== null ? valorForcado : parseFloat(document.getElementById('v-pgto-valor').value);
+            
+            if (isNaN(valor) || valor <= 0) return alert("Digite um valor válido maior que zero!");
+            
+            const totais = calcularTotaisVenda();
+
+            // Validações
+            if(metodo === 'Crédito do Cliente') {
+                const cStr = document.getElementById('v-cliente').value;
+                if(!cStr) return alert("Selecione um cliente válido primeiro!");
+                const cId = parseInt(cStr.split(' - ')[0]); const c = db.clientes.find(x => x.id === cId);
+                
+                const jaUsado = pagamentosVenda.filter(p => p.metodo === 'Crédito do Cliente').reduce((a, b) => a + b.valor, 0);
+                const disponivel = (c.credito || 0) - jaUsado;
+                
+                if(valor > disponivel) {
+                    alert(`O cliente possui apenas R$ ${formatCurrency(disponivel)} de crédito disponível agora.`);
+                    valor = disponivel; if(valor <= 0) return;
+                }
+            }
+
+            if(metodo === 'Prazo em Carteira' && valor > totais.restante) {
+                alert("O valor A Prazo não pode ser maior que o que falta pagar da venda!");
+                valor = totais.restante; if(valor <= 0) return;
+            }
+
+            let infoExtra = "";
+            if(metodo === 'Cheque') {
+                infoExtra = document.getElementById('v-cheque-info').value.trim();
+                if(!infoExtra) return alert("Preencha os dados do cheque!");
+            }
+
+            pagamentosVenda.push({ metodo: metodo, valor: valor, info: infoExtra });
+            document.getElementById('v-pgto-valor').value = ""; document.getElementById('v-cheque-info').value = "";
+            renderizarPagamentosVenda();
+        }
+
+        function removerPagamentoVenda(index) { pagamentosVenda.splice(index, 1); renderizarPagamentosVenda(); }
+
+        function renderizarPagamentosVenda() {
+            const tbody = document.getElementById('lista-pagamentos-body'); const tabela = document.getElementById('tabela-pagamentos');
+            if(pagamentosVenda.length === 0) { tabela.style.display = 'none'; } else {
+                tabela.style.display = 'table';
+                tbody.innerHTML = pagamentosVenda.map((p, i) => `<tr><td><b>${p.metodo}</b></td><td>R$ ${formatCurrency(p.valor)}</td><td style="color:#64748b; font-size:0.8rem;">${p.info || '-'}</td><td style="text-align: center;"><button type="button" onclick="removerPagamentoVenda(${i})" style="color:var(--danger); background:none; border:none; cursor:pointer; font-weight:bold; font-size:1.2rem;">&times;</button></td></tr>`).join('');
+            }
+            atualizarTotalTela();
+        }
+
+        function calcularTotaisVenda() {
             const somaCarrinho = carrinhoAtual.reduce((acc, item) => acc + item.totalItem, 0); 
             const acres = parseFloat(document.getElementById('v-acres').value) || 0; 
             const desc = parseFloat(document.getElementById('v-desc').value) || 0;
+            const totalVenda = somaCarrinho + acres - desc;
+            const totalPago = pagamentosVenda.reduce((acc, p) => acc + p.valor, 0);
+            const restante = totalVenda - totalPago;
+            return { totalVenda, totalPago, restante };
+        }
+
+        function atualizarTotalTela() {
+            const t = calcularTotaisVenda();
             
-            let totalGeral = somaCarrinho + acres - desc; 
+            document.getElementById('v-total-txt').innerText = formatCurrency(t.totalVenda);
+            document.getElementById('v-pago-txt').innerText = formatCurrency(t.totalPago);
             
-            // 1. APLICAR CRÉDITO DO CLIENTE NA VENDA SE MARCADO
-            const cStr = document.getElementById('v-cliente').value;
-            let c = null;
-            if(cStr.includes(' - ')) c = db.clientes.find(x => x.id === parseInt(cStr.split(' - ')[0]));
+            const divFalta = document.getElementById('div-falta'); const divTroco = document.getElementById('div-troco'); const divGerarCredito = document.getElementById('div-gerar-credito');
 
-            let creditoUsado = 0;
-            if(c && document.getElementById('v-usar-credito').checked) {
-                creditoUsado = Math.min(c.credito || 0, totalGeral); // Não abate mais do que o total da venda
-                totalGeral -= creditoUsado;
-            }
-
-            document.getElementById('v-total-txt').innerText = formatCurrency(totalGeral); 
-            
-            // 2. CALCULAR TROCO E GERAR NOVO CRÉDITO
-            const recebido = parseFloat(document.getElementById('v-recebido').value) || 0;
-            const troco = recebido - totalGeral;
-            const divGerarCredito = document.getElementById('div-gerar-credito');
-
-            // Só calculamos troco real se o método for à vista (não faz sentido troco pra Prazo)
-            const pgtoAtual = document.getElementById('v-pgto').value;
-            const gerarTrocoValido = (pgtoAtual !== 'Prazo em Carteira') && (recebido > 0) && (troco > 0);
-
-            if(gerarTrocoValido) {
-                document.getElementById('v-troco').value = formatCurrency(troco);
-                document.getElementById('v-troco-txt').innerText = formatCurrency(troco);
-                if(c) divGerarCredito.classList.remove('hidden'); // Mostra a opção de converter pra crédito
-            } else {
-                document.getElementById('v-troco').value = "0,00";
+            if(t.restante > 0) {
+                divFalta.style.display = 'block'; divTroco.style.display = 'none';
+                document.getElementById('v-falta-txt').innerText = formatCurrency(t.restante);
                 divGerarCredito.classList.add('hidden');
-                document.getElementById('v-converter-credito').checked = false;
+            } else if (t.restante < 0) {
+                divFalta.style.display = 'none'; divTroco.style.display = 'block';
+                document.getElementById('v-troco-txt').innerText = formatCurrency(Math.abs(t.restante));
+                
+                // Só mostra gerar crédito se tiver cliente selecionado
+                if(document.getElementById('v-cliente').value.trim() !== '') {
+                    divGerarCredito.classList.remove('hidden');
+                    document.getElementById('v-troco-txt-credito').innerText = formatCurrency(Math.abs(t.restante));
+                }
+            } else {
+                divFalta.style.display = 'none'; divTroco.style.display = 'none'; divGerarCredito.classList.add('hidden');
             }
-
-            return { totalCalculado: totalGeral, creditoUsado: creditoUsado, troco: troco, gerarTrocoValido: gerarTrocoValido }; 
+            sugerirValorPgto();
         }
 
         function openSaleModal() { 
@@ -816,11 +770,11 @@
             
             document.getElementById('form-venda').reset(); document.getElementById('v-id-edit').value = ''; document.getElementById('modal-title-venda').innerText = "Nova Venda"; document.getElementById('btn-save-venda').innerText = "FINALIZAR NOVA VENDA (F11)"; 
             document.getElementById('v-data').value = new Date().toISOString().split('T')[0];
-            document.getElementById('v-qtd').value = "0"; 
             document.getElementById('div-alerta-credito').style.display = 'none';
-            togglePgtoExtra(); 
+            document.getElementById('v-qtd').value = "0"; 
             
-            carrinhoAtual = []; renderizarCarrinhoNaTela(); 
+            carrinhoAtual = []; pagamentosVenda = []; 
+            renderizarCarrinhoNaTela(); renderizarPagamentosVenda();
             document.getElementById('modal-venda').style.display = 'flex'; 
             setTimeout(() => { document.getElementById('v-vendedor').focus(); }, 100);
         }
@@ -832,13 +786,13 @@
             const cliente = db.clientes.find(c => c.id == v.clienteId); if(cliente) { document.getElementById('v-cliente').value = `${cliente.id} - ${cliente.nome}`; }
             document.getElementById('v-qtd').value = "0"; document.getElementById('v-acres').value = v.acres || 0; document.getElementById('v-desc').value = v.desc || 0; 
             
-            if(v.pagamento.startsWith('Misto')) { document.getElementById('v-pgto').value = 'Misto'; } else { document.getElementById('v-pgto').value = v.pagamento; } togglePgtoExtra();
-            
+            // Reconstroi carrinho e pagamentos
             if (v.carrinho && v.carrinho.length > 0) { carrinhoAtual = JSON.parse(JSON.stringify(v.carrinho)); } else if (v.prodId) { const p = db.produtos.find(p => p.id == v.prodId); carrinhoAtual = [{ prodId: v.prodId, nome: p ? p.nome : 'Produto (Antigo)', qtd: v.qtd || 1, unit: v.unit || 0, totalItem: (v.qtd || 1) * (v.unit || 0) }]; } else { carrinhoAtual = []; }
+            if (v.pagamentosVenda) { pagamentosVenda = JSON.parse(JSON.stringify(v.pagamentosVenda)); } else { pagamentosVenda = [{ metodo: v.pagamento.replace(/Acertado \(/g, '').replace(/\)/g, ''), valor: v.total }]; }
 
-            document.getElementById('div-alerta-credito').style.display = 'none'; // Na edição bloqueamos o uso do crédito pra não bugar histórico
+            document.getElementById('div-alerta-credito').style.display = 'none'; 
             
-            renderizarCarrinhoNaTela();
+            renderizarCarrinhoNaTela(); renderizarPagamentosVenda();
             document.getElementById('modal-title-venda').innerText = "Editar Venda #" + v.id; document.getElementById('btn-save-venda').innerText = "SALVAR ALTERAÇÕES (F11)"; 
             document.getElementById('modal-venda').style.display = 'flex'; setTimeout(() => { document.getElementById('v-vendedor').focus(); }, 100);
         }
@@ -847,51 +801,59 @@
 
         function executeSale(e) {
             e.preventDefault();
-            if(carrinhoAtual.length === 0) return alert('Você precisa adicionar pelo menos um produto!');
+            const totais = calcularTotaisVenda();
+            if(carrinhoAtual.length === 0) return alert('Adicione pelo menos um produto!');
+            if(pagamentosVenda.length === 0 && totais.totalVenda > 0) return alert('Você não lançou nenhuma forma de pagamento!');
             
-            const vendedor = formatInputVal('v-vendedor', db.vendedores); if(!vendedor) return alert('Vendedor não encontrado!');
-            const cliente = formatInputVal('v-cliente', db.clientes); if(!cliente) return alert('Cliente não encontrado!');
-
-            const idEdit = document.getElementById('v-id-edit').value;
-            const dataPedido = document.getElementById('v-data').value; 
-            
-            const totais = atualizarTotalTela();
-            let pgto = document.getElementById('v-pgto').value;
-            
-            // VALIDAÇÃO MISTO
-            if(pgto === 'Misto') {
-                const v1 = parseFloat(document.getElementById('v-misto-val1').value) || 0; const v2 = parseFloat(document.getElementById('v-misto-val2').value) || 0; const m1 = document.getElementById('v-misto-met1').value; const m2 = document.getElementById('v-misto-met2').value;
-                if(Math.abs((v1 + v2) - totais.totalCalculado) > 0.01) { return alert(`Erro: A soma do Misto (R$ ${formatCurrency(v1+v2)}) difere do total a pagar (R$ ${formatCurrency(totais.totalCalculado)}).`); }
-                pgto = `Misto (${m1}: R$ ${formatCurrency(v1)} + ${m2}: R$ ${formatCurrency(v2)})`;
-            }
-
+            const vendedor = formatInputVal('v-vendedor', db.vendedores); if(!vendedor) return alert('Vendedor inválido!');
+            const cliente = formatInputVal('v-cliente', db.clientes); if(!cliente) return alert('Cliente inválido!');
             let clienteUpdate = db.clientes.find(c => c.id === cliente.id);
 
-            // MANIPULAÇÃO DO CRÉDITO DO CLIENTE (SE HOUVER)
-            let pgtoFinalString = pgto;
-            if(!idEdit) { // Só aplica créditos novos ou gastos em vendas NOVAS
-                if(document.getElementById('v-usar-credito').checked && totais.creditoUsado > 0) {
-                    clienteUpdate.credito -= totais.creditoUsado;
-                    pgtoFinalString = `Abatido R$ ${formatCurrency(totais.creditoUsado)} do Crédito + ` + pgto;
-                }
-                if(document.getElementById('v-converter-credito').checked && totais.gerarTrocoValido) {
-                    clienteUpdate.credito = (clienteUpdate.credito || 0) + totais.troco;
-                    alert(`R$ ${formatCurrency(totais.troco)} do troco foram guardados como CRÉDITO para ${cliente.nome}!`);
+            // Alerta Final de Crédito (A cereja do bolo que vc pediu)
+            const idEdit = document.getElementById('v-id-edit').value;
+            if(!idEdit && totais.restante > 0 && (clienteUpdate.credito || 0) > 0) {
+                const jaUsou = pagamentosVenda.some(p => p.metodo === 'Crédito do Cliente');
+                if(!jaUsou) {
+                    if(confirm(`⭐ O cliente ${cliente.nome} tem R$ ${formatCurrency(clienteUpdate.credito)} de crédito em loja.\n\nDeseja utilizar este saldo agora para abater no valor que falta (R$ ${formatCurrency(totais.restante)})?`)) {
+                        adicionarPagamentoVenda('Crédito do Cliente', Math.min(clienteUpdate.credito, totais.restante));
+                        return; // Pausa pra ele ver e clicar em finalizar de novo
+                    }
                 }
             }
 
-            let d = new Date(dataPedido + "T12:00:00"); d.setDate(d.getDate() + (cliente.prazo || 0));
-            const resumoItens = carrinhoAtual.map(i => `${i.nome} (x${i.qtd})`).join(', ');
+            if(totais.restante > 0) return alert(`Ainda falta lançar o pagamento de R$ ${formatCurrency(totais.restante)}!`);
 
-            // Soma o total da venda (incluindo a parte paga em crédito para histórico visual ficar correto)
-            const totalAbsolutoDaVenda = totais.totalCalculado + (idEdit ? 0 : totais.creditoUsado);
+            const dataPedido = document.getElementById('v-data').value; 
+            
+            // Identificando o "Prazo em Carteira" e organizando saldos
+            const itemPrazo = pagamentosVenda.find(p => p.metodo === 'Prazo em Carteira');
+            const valorApenasPrazo = itemPrazo ? itemPrazo.valor : 0;
+            // O valor pago fisicamente é o Total da Venda MENOS a parte que foi jogada "A Prazo"
+            const valorPagoRealmente = totais.totalVenda - valorApenasPrazo; 
+            
+            let d = null;
+            if(itemPrazo) { d = new Date(dataPedido + "T12:00:00"); d.setDate(d.getDate() + (cliente.prazo || 0)); }
+            
+            // Abate o Crédito do Cliente usado
+            const somaUsouCredito = pagamentosVenda.filter(p => p.metodo === 'Crédito do Cliente').reduce((a, b) => a + b.valor, 0);
+            if(somaUsouCredito > 0 && !idEdit) { clienteUpdate.credito -= somaUsouCredito; }
+
+            // Gera Crédito de Troco
+            if(totais.restante < 0 && document.getElementById('v-converter-credito').checked && !idEdit) {
+                clienteUpdate.credito += Math.abs(totais.restante);
+                alert(`R$ ${formatCurrency(Math.abs(totais.restante))} de troco guardados como CRÉDITO para ${cliente.nome}!`);
+            }
+
+            // String do Histórico
+            const pgtoString = pagamentosVenda.map(p => `${p.metodo} (R$ ${formatCurrency(p.valor)})` + (p.info ? ` - ${p.info}` : '')).join(' | ');
+            const resumoItens = carrinhoAtual.map(i => `${i.nome} (x${i.qtd})`).join(', ');
 
             const baseData = {
                 dataPedido: dataPedido, vendedor: vendedor.nome, tipo: document.getElementById('v-tipo').value,
-                cliente: cliente.nome, clienteId: cliente.id, carrinho: [...carrinhoAtual], 
+                cliente: cliente.nome, clienteId: cliente.id, carrinho: [...carrinhoAtual], pagamentosVenda: [...pagamentosVenda],
                 acres: document.getElementById('v-acres').value, desc: document.getElementById('v-desc').value, 
-                total: totalAbsolutoDaVenda, pagamento: pgtoFinalString, 
-                vencimento: pgto === 'Prazo em Carteira' ? d.toISOString().split('T')[0] : null, 
+                total: totais.totalVenda, pagamento: pgtoString, 
+                vencimento: d ? d.toISOString().split('T')[0] : null, 
                 status: 'Ativa', itens: resumoItens 
             };
 
@@ -899,11 +861,12 @@
             if (idEdit) {
                 const index = db.vendas.findIndex(v => v.id == idEdit);
                 if (index !== -1) { 
-                    if(db.vendas[index].dataBaixa) { baseData.dataBaixa = db.vendas[index].dataBaixa; baseData.valorPago = db.vendas[index].valorPago; baseData.historicoPgto = db.vendas[index].historicoPgto;}
+                    if(db.vendas[index].dataBaixa) { baseData.dataBaixa = db.vendas[index].dataBaixa; baseData.valorPago = db.vendas[index].valorPago; baseData.historicoPgto = db.vendas[index].historicoPgto; }
+                    else { baseData.valorPago = valorPagoRealmente; baseData.pagamentosOriginal = pgtoString; baseData.valorPagoOriginal = valorPagoRealmente; }
                     db.vendas[index] = { ...db.vendas[index], ...baseData }; alert("Venda atualizada!"); 
                 }
             } else {
-                const novaVenda = { id: db.vendas.length > 0 ? Math.max(...db.vendas.map(v => v.id)) + 1 : 1000, data: new Date().toISOString(), valorPago: 0, historicoPgto: [], ...baseData };
+                const novaVenda = { id: db.vendas.length > 0 ? Math.max(...db.vendas.map(v => v.id)) + 1 : 1000, data: new Date().toISOString(), valorPago: valorPagoRealmente, valorPagoOriginal: valorPagoRealmente, pagamentosOriginal: pgtoString, historicoPgto: [], ...baseData };
                 db.vendas.push(novaVenda); vId = novaVenda.id;
             }
 
@@ -918,7 +881,7 @@
             document.getElementById('v-prod-input').addEventListener('keydown', (e) => { if(e.key === 'Enter') { e.preventDefault(); autoFillProduct(); document.getElementById('v-qtd').focus(); } });
             document.getElementById('v-qtd').addEventListener('keydown', (e) => { if(e.key === 'Enter') { e.preventDefault(); document.getElementById('v-unit').focus(); } });
             document.getElementById('v-unit').addEventListener('keydown', (e) => { if(e.key === 'Enter') { e.preventDefault(); adicionarAoCarrinho(); } });
-            ['v-data', 'v-tipo', 'v-acres', 'v-desc', 'v-pgto', 'v-cheque-info', 'v-misto-val1', 'v-misto-val2', 'v-recebido'].forEach(id => { const el = document.getElementById(id); if(el) el.addEventListener('keydown', preventSubmit); });
+            ['v-data', 'v-tipo', 'v-acres', 'v-desc', 'v-pgto-valor', 'v-cheque-info'].forEach(id => { const el = document.getElementById(id); if(el) el.addEventListener('keydown', preventSubmit); });
         }
 
         window.onload = () => { renderVendedores(); renderProducts(); renderClients(); renderSales(); document.getElementById('f-acerto-inicio').value = ''; document.getElementById('f-acerto-fim').value = ''; document.getElementById('nav-home').classList.add('active-nav'); navigate('home'); setupKeyboardNavigation(); };
