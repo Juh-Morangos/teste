@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Vendas Pro v9.9 - Pagamentos Múltiplos e Inteligentes</title>
+    <title>Sistema de Vendas Pro v10.0 - Ajustes Finos de Fluxo</title>
     <style>
         :root { --primary: #2563eb; --success: #10b981; --danger: #ef4444; --warning: #f59e0b; --bg: #f3f4f6; --text: #1f2937; --info: #0ea5e9; }
         body { font-family: 'Segoe UI', system-ui, sans-serif; margin: 0; background-color: var(--bg); color: var(--text); }
@@ -82,7 +82,7 @@
 <body>
 
     <header class="no-print">
-        <h2 style="margin:0">🚀 VendaFlow Pro</h2>
+        <h2 style="margin:0">LA SISTEMAS</h2>
         <nav>
             <button id="nav-home" onclick="navigate('home')">Início/Vendas</button>
             <button id="nav-produtos" onclick="navigate('produtos')">Produtos</button>
@@ -317,7 +317,7 @@
                             <input type="text" id="v-prod-input" list="dl-produtos" placeholder="Ex: 3 ou Banana" autocomplete="off" onchange="autoFillProduct()">
                             <datalist id="dl-produtos"></datalist>
                         </div>
-                        <div class="form-group"><label>Qtd</label><input type="number" id="v-qtd" value="0" step="any"></div>
+                        <div class="form-group"><label>Qtd</label><input type="number" id="v-qtd" placeholder="Ex: 1" step="any"></div>
                         <div class="form-group"><label>Unitário R$</label><input type="number" step="0.01" id="v-unit"></div>
                         <div class="form-group" style="justify-content: flex-end;">
                             <button type="button" class="btn btn-primary" onclick="adicionarAoCarrinho()">+ Adicionar</button>
@@ -441,7 +441,7 @@
 
         let verCanceladasGlobal = false; let filtroAcertoAtual = 'Todos'; 
         let carrinhoAtual = []; 
-        let pagamentosVenda = []; // NOVO ARRAY DE PAGAMENTOS MÚLTIPLOS
+        let pagamentosVenda = []; 
 
         let db = { 
             clientes: JSON.parse(localStorage.getItem('db_clientes')) || [], 
@@ -449,7 +449,7 @@
             vendas: JSON.parse(localStorage.getItem('db_vendas')) || [],
             vendedores: JSON.parse(localStorage.getItem('db_vendedores')) || []
         };
-        db.clientes.forEach(c => { if(c.credito === undefined) c.credito = 0; }); // Garante campo crédito
+        db.clientes.forEach(c => { if(c.credito === undefined) c.credito = 0; }); 
 
         function saveDB() {
             localStorage.setItem('db_clientes', JSON.stringify(db.clientes));
@@ -529,7 +529,6 @@
 
             tbody.innerHTML = filtradas.map(v => {
                 const dataPedStr = v.dataPedido ? v.dataPedido.split('-').reverse().join('/') : v.data.split('T')[0].split('-').reverse().join('/'); let rowStyles = v.status === 'Cancelada' ? 'background: #fff5f5;' : '';
-                // Limpeza visual do Múltiplo para a tabela
                 let pgtoVis = v.pagamento.replace(/\|/g, '<br>').replace(/Prazo em Carteira/g, '<span style="color:#f59e0b;font-weight:bold;">Prazo</span>');
                 return `<tr style="${rowStyles}"><td style="text-align: center;"><input type="checkbox" class="check-venda" value="${v.id}" onchange="highlightRow(this)"></td><td>#${v.id}</td><td><b>${dataPedStr}</b></td><td>${v.cliente}</td><td>${v.vendedor || '-'}</td><td><b>R$ ${formatCurrency(v.total)}</b></td><td style="font-size:0.8rem;">${pgtoVis}</td><td><span class="badge ${v.status === 'Ativa' ? 'badge-success' : 'badge-danger'}">${v.status}</span></td></tr>`;
             }).join('');
@@ -566,7 +565,6 @@
                     if (v.desc > 0) html += `<p style="margin:5px 0">Desconto: R$ ${formatCurrency(v.desc)}</p>`; 
                     html += `<h4 style="margin:10px 0; font-size:1.2em;">TOTAL: R$ ${formatCurrency(v.total)}</h4>`;
                     
-                    // Formata os múltiplos pagamentos pro cupom
                     let pgtoPrint = v.pagamento.replace(/\|/g, '<br>');
                     html += `<p style="margin:5px 0"><b>Pagamentos:</b><br>${pgtoPrint}</p>`; 
                     
@@ -579,7 +577,7 @@
             document.getElementById('receipt-print').innerHTML = allHtml; window.print();
         }
 
-        // --- SISTEMA DE ACERTO DE CONTAS (INTOCADO E COMPATÍVEL) ---
+        // --- SISTEMA DE ACERTO DE CONTAS ---
         function switchAcertoTab(tab) { document.getElementById('btn-tab-pendentes').classList.remove('active-tab'); document.getElementById('btn-tab-historico').classList.remove('active-tab'); document.getElementById('view-pendentes').style.display = 'none'; document.getElementById('view-historico').style.display = 'none'; if(tab === 'pendentes') { document.getElementById('btn-tab-pendentes').classList.add('active-tab'); document.getElementById('view-pendentes').style.display = 'block'; renderAcerto(); } else { document.getElementById('btn-tab-historico').classList.add('active-tab'); document.getElementById('view-historico').style.display = 'block'; const hoje = new Date().toISOString().split('T')[0]; if(!document.getElementById('f-hist-inicio').value) { document.getElementById('f-hist-inicio').value = hoje; document.getElementById('f-hist-fim').value = hoje; } renderHistorico(); } }
         function setFiltroAcerto(filtro) { filtroAcertoAtual = filtro; ['Todos', 'A Vencer', 'Vencidos', 'Pagas'].forEach(f => document.getElementById(`f-acerto-${f}`).classList.remove('active')); document.getElementById(`f-acerto-${filtro}`).classList.add('active'); renderAcerto(); }
         
@@ -661,7 +659,7 @@
             if(qtd <= 0) return alert('A quantidade deve ser maior que zero!');
             const unit = parseFloat(document.getElementById('v-unit').value) || 0;
             carrinhoAtual.push({ prodId: p.id, nome: p.nome, qtd: qtd, unit: unit, totalItem: qtd * unit });
-            document.getElementById('v-prod-input').value = ""; document.getElementById('v-qtd').value = "0"; document.getElementById('v-unit').value = ""; 
+            document.getElementById('v-prod-input').value = ""; document.getElementById('v-qtd').value = ""; document.getElementById('v-unit').value = ""; 
             renderizarCarrinhoNaTela(); document.getElementById('v-prod-input').focus();
         }
 
@@ -676,7 +674,6 @@
             atualizarTotalTela();
         }
 
-        // NOVO: Adiciona um método de pagamento na lista
         function adicionarPagamentoVenda(metodoForcado = null, valorForcado = null) {
             const metodo = metodoForcado || document.getElementById('v-pgto-metodo').value;
             let valor = valorForcado !== null ? valorForcado : parseFloat(document.getElementById('v-pgto-valor').value);
@@ -753,7 +750,6 @@
                 divFalta.style.display = 'none'; divTroco.style.display = 'block';
                 document.getElementById('v-troco-txt').innerText = formatCurrency(Math.abs(t.restante));
                 
-                // Só mostra gerar crédito se tiver cliente selecionado
                 if(document.getElementById('v-cliente').value.trim() !== '') {
                     divGerarCredito.classList.remove('hidden');
                     document.getElementById('v-troco-txt-credito').innerText = formatCurrency(Math.abs(t.restante));
@@ -771,7 +767,7 @@
             document.getElementById('form-venda').reset(); document.getElementById('v-id-edit').value = ''; document.getElementById('modal-title-venda').innerText = "Nova Venda"; document.getElementById('btn-save-venda').innerText = "FINALIZAR NOVA VENDA (F11)"; 
             document.getElementById('v-data').value = new Date().toISOString().split('T')[0];
             document.getElementById('div-alerta-credito').style.display = 'none';
-            document.getElementById('v-qtd').value = "0"; 
+            document.getElementById('v-qtd').value = ""; 
             
             carrinhoAtual = []; pagamentosVenda = []; 
             renderizarCarrinhoNaTela(); renderizarPagamentosVenda();
@@ -784,9 +780,8 @@
             document.getElementById('v-id-edit').value = v.id; document.getElementById('v-data').value = v.dataPedido ? v.dataPedido : v.data.split('T')[0]; document.getElementById('v-tipo').value = v.tipo || 'Venda'; 
             const vendedor = db.vendedores.find(vd => vd.nome === v.vendedor); if(vendedor) { document.getElementById('v-vendedor').value = `${vendedor.id} - ${vendedor.nome}`; } else { document.getElementById('v-vendedor').value = v.vendedor || ''; }
             const cliente = db.clientes.find(c => c.id == v.clienteId); if(cliente) { document.getElementById('v-cliente').value = `${cliente.id} - ${cliente.nome}`; }
-            document.getElementById('v-qtd').value = "0"; document.getElementById('v-acres').value = v.acres || 0; document.getElementById('v-desc').value = v.desc || 0; 
+            document.getElementById('v-qtd').value = ""; document.getElementById('v-acres').value = v.acres || 0; document.getElementById('v-desc').value = v.desc || 0; 
             
-            // Reconstroi carrinho e pagamentos
             if (v.carrinho && v.carrinho.length > 0) { carrinhoAtual = JSON.parse(JSON.stringify(v.carrinho)); } else if (v.prodId) { const p = db.produtos.find(p => p.id == v.prodId); carrinhoAtual = [{ prodId: v.prodId, nome: p ? p.nome : 'Produto (Antigo)', qtd: v.qtd || 1, unit: v.unit || 0, totalItem: (v.qtd || 1) * (v.unit || 0) }]; } else { carrinhoAtual = []; }
             if (v.pagamentosVenda) { pagamentosVenda = JSON.parse(JSON.stringify(v.pagamentosVenda)); } else { pagamentosVenda = [{ metodo: v.pagamento.replace(/Acertado \(/g, '').replace(/\)/g, ''), valor: v.total }]; }
 
@@ -809,14 +804,13 @@
             const cliente = formatInputVal('v-cliente', db.clientes); if(!cliente) return alert('Cliente inválido!');
             let clienteUpdate = db.clientes.find(c => c.id === cliente.id);
 
-            // Alerta Final de Crédito (A cereja do bolo que vc pediu)
             const idEdit = document.getElementById('v-id-edit').value;
             if(!idEdit && totais.restante > 0 && (clienteUpdate.credito || 0) > 0) {
                 const jaUsou = pagamentosVenda.some(p => p.metodo === 'Crédito do Cliente');
                 if(!jaUsou) {
                     if(confirm(`⭐ O cliente ${cliente.nome} tem R$ ${formatCurrency(clienteUpdate.credito)} de crédito em loja.\n\nDeseja utilizar este saldo agora para abater no valor que falta (R$ ${formatCurrency(totais.restante)})?`)) {
                         adicionarPagamentoVenda('Crédito do Cliente', Math.min(clienteUpdate.credito, totais.restante));
-                        return; // Pausa pra ele ver e clicar em finalizar de novo
+                        return; 
                     }
                 }
             }
@@ -824,27 +818,21 @@
             if(totais.restante > 0) return alert(`Ainda falta lançar o pagamento de R$ ${formatCurrency(totais.restante)}!`);
 
             const dataPedido = document.getElementById('v-data').value; 
-            
-            // Identificando o "Prazo em Carteira" e organizando saldos
             const itemPrazo = pagamentosVenda.find(p => p.metodo === 'Prazo em Carteira');
             const valorApenasPrazo = itemPrazo ? itemPrazo.valor : 0;
-            // O valor pago fisicamente é o Total da Venda MENOS a parte que foi jogada "A Prazo"
             const valorPagoRealmente = totais.totalVenda - valorApenasPrazo; 
             
             let d = null;
             if(itemPrazo) { d = new Date(dataPedido + "T12:00:00"); d.setDate(d.getDate() + (cliente.prazo || 0)); }
             
-            // Abate o Crédito do Cliente usado
             const somaUsouCredito = pagamentosVenda.filter(p => p.metodo === 'Crédito do Cliente').reduce((a, b) => a + b.valor, 0);
             if(somaUsouCredito > 0 && !idEdit) { clienteUpdate.credito -= somaUsouCredito; }
 
-            // Gera Crédito de Troco
             if(totais.restante < 0 && document.getElementById('v-converter-credito').checked && !idEdit) {
                 clienteUpdate.credito += Math.abs(totais.restante);
                 alert(`R$ ${formatCurrency(Math.abs(totais.restante))} de troco guardados como CRÉDITO para ${cliente.nome}!`);
             }
 
-            // String do Histórico
             const pgtoString = pagamentosVenda.map(p => `${p.metodo} (R$ ${formatCurrency(p.valor)})` + (p.info ? ` - ${p.info}` : '')).join(' | ');
             const resumoItens = carrinhoAtual.map(i => `${i.nome} (x${i.qtd})`).join(', ');
 
@@ -881,6 +869,12 @@
             document.getElementById('v-prod-input').addEventListener('keydown', (e) => { if(e.key === 'Enter') { e.preventDefault(); autoFillProduct(); document.getElementById('v-qtd').focus(); } });
             document.getElementById('v-qtd').addEventListener('keydown', (e) => { if(e.key === 'Enter') { e.preventDefault(); document.getElementById('v-unit').focus(); } });
             document.getElementById('v-unit').addEventListener('keydown', (e) => { if(e.key === 'Enter') { e.preventDefault(); adicionarAoCarrinho(); } });
+            
+            // Navegação de Enter na seleção do método de pagamento
+            document.getElementById('v-pgto-metodo').addEventListener('keydown', (e) => {
+                if(e.key === 'Enter') { e.preventDefault(); document.getElementById('v-pgto-valor').focus(); }
+            });
+
             ['v-data', 'v-tipo', 'v-acres', 'v-desc', 'v-pgto-valor', 'v-cheque-info'].forEach(id => { const el = document.getElementById(id); if(el) el.addEventListener('keydown', preventSubmit); });
         }
 
