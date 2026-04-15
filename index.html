@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Vendas Pro v10.0 - Ajustes Finos de Fluxo</title>
+    <title>Sistema de Vendas Pro v10.1 - Máscara de Real (BRL)</title>
     <style>
         :root { --primary: #2563eb; --success: #10b981; --danger: #ef4444; --warning: #f59e0b; --bg: #f3f4f6; --text: #1f2937; --info: #0ea5e9; }
         body { font-family: 'Segoe UI', system-ui, sans-serif; margin: 0; background-color: var(--bg); color: var(--text); }
@@ -82,7 +82,7 @@
 <body>
 
     <header class="no-print">
-        <h2 style="margin:0">LA SISTEMAS</h2>
+        <h2 style="margin:0">LA SISTEMA-PDV</h2>
         <nav>
             <button id="nav-home" onclick="navigate('home')">Início/Vendas</button>
             <button id="nav-produtos" onclick="navigate('produtos')">Produtos</button>
@@ -354,7 +354,7 @@
                         </div>
                         <div class="form-group" style="flex: 1;">
                             <label>Valor R$</label>
-                            <input type="number" step="0.01" id="v-pgto-valor" style="border-color: #0f766e; font-weight: bold;" onkeyup="if(event.key==='Enter') adicionarPagamentoVenda()">
+                            <input type="text" id="v-pgto-valor" placeholder="0,00" style="border-color: #0f766e; font-weight: bold;" oninput="maskBRL(this)" onkeyup="if(event.key==='Enter') adicionarPagamentoVenda()">
                         </div>
                         <div class="form-group" style="justify-content: flex-end; flex: none;">
                             <button type="button" class="btn" style="background: #0f766e; color: white;" onclick="adicionarPagamentoVenda()">+ Lançar</button>
@@ -438,6 +438,16 @@
 
     <script>
         const formatCurrency = (value) => { return parseFloat(value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); };
+        
+        // FUNÇÃO DE MÁSCARA BRL EM TEMPO REAL
+        function maskBRL(input) {
+            let v = input.value.replace(/\D/g, '');
+            if (!v) { input.value = ''; return; }
+            v = (v / 100).toFixed(2) + '';
+            v = v.replace(".", ",");
+            v = v.replace(/(\d)(?=(\d{3})+(?!\d))/g, "$1.");
+            input.value = v;
+        }
 
         let verCanceladasGlobal = false; let filtroAcertoAtual = 'Todos'; 
         let carrinhoAtual = []; 
@@ -649,7 +659,12 @@
             const m = document.getElementById('v-pgto-metodo').value;
             document.getElementById('div-cheque').style.display = (m === 'Cheque') ? 'flex' : 'none';
             const inputValor = document.getElementById('v-pgto-valor');
-            if(totais.restante > 0) { inputValor.value = totais.restante.toFixed(2); } else { inputValor.value = ""; }
+            if(totais.restante > 0) { 
+                // Aplica a máscara brasileira na sugestão automática
+                let str = totais.restante.toFixed(2).replace('.', ',');
+                str = str.replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1.');
+                inputValor.value = str; 
+            } else { inputValor.value = ""; }
         }
 
         function adicionarAoCarrinho() {
@@ -676,7 +691,12 @@
 
         function adicionarPagamentoVenda(metodoForcado = null, valorForcado = null) {
             const metodo = metodoForcado || document.getElementById('v-pgto-metodo').value;
-            let valor = valorForcado !== null ? valorForcado : parseFloat(document.getElementById('v-pgto-valor').value);
+            
+            // Decodifica a string da máscara de volta para número do sistema
+            let rawInput = document.getElementById('v-pgto-valor').value;
+            let parsedVal = parseFloat(rawInput.replace(/\./g, '').replace(',', '.'));
+            
+            let valor = valorForcado !== null ? valorForcado : parsedVal;
             
             if (isNaN(valor) || valor <= 0) return alert("Digite um valor válido maior que zero!");
             
@@ -870,7 +890,7 @@
             document.getElementById('v-qtd').addEventListener('keydown', (e) => { if(e.key === 'Enter') { e.preventDefault(); document.getElementById('v-unit').focus(); } });
             document.getElementById('v-unit').addEventListener('keydown', (e) => { if(e.key === 'Enter') { e.preventDefault(); adicionarAoCarrinho(); } });
             
-            // Navegação de Enter na seleção do método de pagamento
+            // Atalho: Enter no método de pagamento pula para o campo valor
             document.getElementById('v-pgto-metodo').addEventListener('keydown', (e) => {
                 if(e.key === 'Enter') { e.preventDefault(); document.getElementById('v-pgto-valor').focus(); }
             });
