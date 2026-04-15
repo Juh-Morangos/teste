@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Vendas Pro v9.4 - Códigos Manuais e Busca Exata</title>
+    <title>Sistema de Vendas Pro v9.5 - Formatação de Moeda BRL</title>
     <style>
         :root { --primary: #2563eb; --success: #10b981; --danger: #ef4444; --warning: #f59e0b; --bg: #f3f4f6; --text: #1f2937; --info: #0ea5e9; }
         body { font-family: 'Segoe UI', system-ui, sans-serif; margin: 0; background-color: var(--bg); color: var(--text); }
@@ -418,6 +418,11 @@
     <div id="receipt-print"></div>
 
     <script>
+        // --- FUNÇÃO AUXILIAR PARA FORMATAR MOEDA NO PADRÃO BRASILEIRO ---
+        const formatCurrency = (value) => {
+            return parseFloat(value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        };
+
         let verCanceladasGlobal = false;
         let filtroAcertoAtual = 'Todos';
         let carrinhoAtual = []; 
@@ -451,7 +456,6 @@
             if(page === 'acerto') { switchAcertoTab('pendentes'); }
         }
 
-        // --- SALVAR / EDITAR COM CÓDIGO MANUAL ---
         function saveVendedor(e) { 
             e.preventDefault(); 
             const idEdit = document.getElementById('vend-id-edit').value; 
@@ -474,7 +478,7 @@
             const v = db.vendedores.find(v => v.id === id); if (!v) return; 
             document.getElementById('vend-id-edit').value = v.id; 
             document.getElementById('vend-codigo').value = v.id; 
-            document.getElementById('vend-codigo').readOnly = true; // Bloqueia o código na edição
+            document.getElementById('vend-codigo').readOnly = true; 
             document.getElementById('vend-nome').value = v.nome; 
             document.getElementById('btn-vend-save').innerText = 'Atualizar Vendedor'; window.scrollTo(0,0); 
         }
@@ -517,7 +521,7 @@
             document.getElementById('btn-prod-save').innerText = 'Atualizar Produto'; window.scrollTo(0,0); 
         }
         function renderProducts() { 
-            document.getElementById('prod-table-body').innerHTML = db.produtos.map(p => `<tr><td><b>${p.id}</b></td><td>${p.nome}</td><td>${p.unidade}</td><td>R$ ${p.preco.toFixed(2)}</td><td><button type="button" class="btn btn-info" onclick="editProduct(${p.id})" style="padding:4px">✏️</button> <button type="button" class="btn btn-danger" onclick="deleteProd(${p.id})" style="padding:4px">X</button></td></tr>`).join(''); 
+            document.getElementById('prod-table-body').innerHTML = db.produtos.map(p => `<tr><td><b>${p.id}</b></td><td>${p.nome}</td><td>${p.unidade}</td><td>R$ ${formatCurrency(p.preco)}</td><td><button type="button" class="btn btn-info" onclick="editProduct(${p.id})" style="padding:4px">✏️</button> <button type="button" class="btn btn-danger" onclick="deleteProd(${p.id})" style="padding:4px">X</button></td></tr>`).join(''); 
             document.getElementById('dl-produtos').innerHTML = db.produtos.map(p => `<option value="${p.id} - ${p.nome}">`).join(''); 
         }
         function deleteProd(id) { if(confirm('Excluir produto?')) { db.produtos = db.produtos.filter(p => p.id !== id); saveDB(); renderProducts(); } }
@@ -597,7 +601,7 @@
                     <td style="font-size: 0.8rem; color: #666;">${dataIncStr}</td>
                     <td>${v.cliente}</td>
                     <td>${v.vendedor || '-'}</td>
-                    <td><b>R$ ${v.total.toFixed(2)}</b></td>
+                    <td><b>R$ ${formatCurrency(v.total)}</b></td>
                     <td>${v.pagamento}</td>
                     <td><span class="badge ${v.status === 'Ativa' ? 'badge-success' : 'badge-danger'}">${v.status}</span></td>
                 </tr>
@@ -623,9 +627,9 @@
 
             const tPendente = baseVendas.filter(v => (v.pagamento === 'Prazo em Carteira' || (v.vencimento !== null && !v.pagamento.includes('Acertado'))) && v.status === 'Ativa').reduce((acc, v) => acc + v.total, 0);
             
-            document.getElementById('dash-hoje').innerText = `R$ ${tHoje.toFixed(2)}`;
-            document.getElementById('dash-mes').innerText = `R$ ${tMes.toFixed(2)}`;
-            document.getElementById('dash-pendente').innerText = `R$ ${tPendente.toFixed(2)}`;
+            document.getElementById('dash-hoje').innerText = `R$ ${formatCurrency(tHoje)}`;
+            document.getElementById('dash-mes').innerText = `R$ ${formatCurrency(tMes)}`;
+            document.getElementById('dash-pendente').innerText = `R$ ${formatCurrency(tPendente)}`;
         }
 
         function editarSelecionado() {
@@ -659,7 +663,7 @@
             vendas.forEach((v, index) => {
                 let listaProdutosHtml = "";
                 if (tipo === 'cliente') {
-                    if(v.carrinho && v.carrinho.length > 0) { listaProdutosHtml = v.carrinho.map(item => `${item.nome}<br>Qtd: ${item.qtd} x R$ ${item.unit.toFixed(2)} = R$ ${item.totalItem.toFixed(2)}`).join('<br><br>'); } else { listaProdutosHtml = v.itens; }
+                    if(v.carrinho && v.carrinho.length > 0) { listaProdutosHtml = v.carrinho.map(item => `${item.nome}<br>Qtd: ${item.qtd} x R$ ${formatCurrency(item.unit)} = R$ ${formatCurrency(item.totalItem)}`).join('<br><br>'); } else { listaProdutosHtml = v.itens; }
                 } else {
                     if(v.carrinho && v.carrinho.length > 0) { listaProdutosHtml = v.carrinho.map(item => `<b>[  ] ${item.qtd}x</b> - ${item.nome}`).join('<br><br>'); } else { listaProdutosHtml = v.itens; }
                 }
@@ -680,9 +684,9 @@
                     <hr style="border-top:1px dashed #000; border-bottom:none;">
                 `;
                 if (tipo === 'cliente') {
-                    if (v.acres > 0) html += `<p style="margin:5px 0">Acrescimo: R$ ${parseFloat(v.acres).toFixed(2)}</p>`;
-                    if (v.desc > 0) html += `<p style="margin:5px 0">Desconto: R$ ${parseFloat(v.desc).toFixed(2)}</p>`;
-                    html += `<h4 style="margin:10px 0; font-size:1.2em;">TOTAL: R$ ${v.total.toFixed(2)}</h4><p style="margin:5px 0">Pgto: ${v.pagamento}</p><p style="margin:20px 0 5px 0; text-align:center;"><em>Obrigado pela preferencia!</em></p>`;
+                    if (v.acres > 0) html += `<p style="margin:5px 0">Acrescimo: R$ ${formatCurrency(v.acres)}</p>`;
+                    if (v.desc > 0) html += `<p style="margin:5px 0">Desconto: R$ ${formatCurrency(v.desc)}</p>`;
+                    html += `<h4 style="margin:10px 0; font-size:1.2em;">TOTAL: R$ ${formatCurrency(v.total)}</h4><p style="margin:5px 0">Pgto: ${v.pagamento}</p><p style="margin:20px 0 5px 0; text-align:center;"><em>Obrigado pela preferencia!</em></p>`;
                 } else {
                     html += `<br><br><br><p style="margin:5px 0; text-align:center;"><em>Assinatura do Conferente:</em></p><p style="text-align:center;">___________________________</p>`;
                 }
@@ -713,14 +717,14 @@
             let html = '<table class="report-table"><tbody>'; let totalGeral = 0;
             vendas.forEach(v => {
                 totalGeral += v.total; const dPed = v.dataPedido ? v.dataPedido.split('-').reverse().join('/') : v.data.split('T')[0].split('-').reverse().join('/');
-                html += `<tr class="report-header-row"><td colspan="2"><b>${v.id} &nbsp;&nbsp;&nbsp; ${v.vendedor || ''} &nbsp; ${dPed}</b></td><td colspan="2"><b>${(v.clienteId || '0') + ' - ' + v.cliente.toUpperCase()}</b></td><td style="text-align: right;"><b>${v.total.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</b></td></tr>
+                html += `<tr class="report-header-row"><td colspan="2"><b>${v.id} &nbsp;&nbsp;&nbsp; ${v.vendedor || ''} &nbsp; ${dPed}</b></td><td colspan="2"><b>${(v.clienteId || '0') + ' - ' + v.cliente.toUpperCase()}</b></td><td style="text-align: right;"><b>${formatCurrency(v.total)}</b></td></tr>
                          <tr class="report-item-header"><td style="width: 5%; text-align:center;">Item</td><td style="width: 45%;">Produto</td><td style="width: 15%; text-align:right;">Qtd</td><td style="width: 15%; text-align:right;">Valor</td><td style="width: 20%; text-align:right;">Total</td></tr>`;
                 if (v.carrinho && v.carrinho.length > 0) {
-                    v.carrinho.forEach((item, idx) => { html += `<tr><td style="text-align:center;">${idx + 1}</td><td>${item.prodId || '0'} - ${item.nome.toUpperCase()}</td><td style="text-align:right;">${item.qtd.toLocaleString('pt-BR', {minimumFractionDigits: 3, maximumFractionDigits: 3})}</td><td style="text-align:right;">${item.unit.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td><td style="text-align:right;">${item.totalItem.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td></tr>`; });
+                    v.carrinho.forEach((item, idx) => { html += `<tr><td style="text-align:center;">${idx + 1}</td><td>${item.prodId || '0'} - ${item.nome.toUpperCase()}</td><td style="text-align:right;">${item.qtd.toLocaleString('pt-BR', {minimumFractionDigits: 3, maximumFractionDigits: 3})}</td><td style="text-align:right;">${formatCurrency(item.unit)}</td><td style="text-align:right;">${formatCurrency(item.totalItem)}</td></tr>`; });
                 } else { html += `<tr><td style="text-align:center;">1</td><td colspan="4">${v.itens}</td></tr>`; }
                 html += `<tr><td colspan="5" style="padding-bottom: 10px;"></td></tr>`;
             });
-            html += `<tr class="report-footer"><td colspan="3"></td><td style="text-align: right;">Nº Vendas: &nbsp;&nbsp; ${vendas.length} &nbsp;&nbsp;&nbsp;&nbsp; Total:</td><td style="text-align: right;">${totalGeral.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td></tr></tbody></table>`;
+            html += `<tr class="report-footer"><td colspan="3"></td><td style="text-align: right;">Nº Vendas: &nbsp;&nbsp; ${vendas.length} &nbsp;&nbsp;&nbsp;&nbsp; Total:</td><td style="text-align: right;">${formatCurrency(totalGeral)}</td></tr></tbody></table>`;
             return html;
         }
 
@@ -794,7 +798,7 @@
                     <td><b>#${v.id}</b></td>
                     <td>${v.cliente}</td>
                     <td style="${isVencido ? 'color: red; font-weight: bold;' : ''}">${v.vencimento.split('-').reverse().join('/')}</td>
-                    <td><b>R$ ${v.total.toFixed(2)}</b></td>
+                    <td><b>R$ ${formatCurrency(v.total)}</b></td>
                     <td>${statusBadge}</td>
                     <td>${pgtoText}</td>
                 </tr>`;
@@ -826,7 +830,7 @@
                 const dataFormatada = dateObj.toLocaleDateString('pt-BR');
                 const horaFormatada = v.dataBaixa ? dateObj.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'}) : '--:--';
                 const metodoLimpo = v.pagamento.replace('Acertado (','').replace(')','');
-                return `<tr><td><b>${dataFormatada}</b> <span style="color:#888; font-size:0.8rem">${horaFormatada}</span></td><td>#${v.id}</td><td>${v.cliente}</td><td><span style="color: #059669; font-weight: bold;">${metodoLimpo}</span></td><td><b>R$ ${v.total.toFixed(2)}</b></td><td><button class="btn btn-ghost" onclick="cancelarBaixaIndividual(${v.id})" style="padding:4px 8px; font-size:0.85rem; color: var(--danger); border-color: var(--danger);" title="Desfazer Baixa (Volta para Pendente)">❌ Cancelar Acerto</button></td></tr>`;
+                return `<tr><td><b>${dataFormatada}</b> <span style="color:#888; font-size:0.8rem">${horaFormatada}</span></td><td>#${v.id}</td><td>${v.cliente}</td><td><span style="color: #059669; font-weight: bold;">${metodoLimpo}</span></td><td><b>R$ ${formatCurrency(v.total)}</b></td><td><button class="btn btn-ghost" onclick="cancelarBaixaIndividual(${v.id})" style="padding:4px 8px; font-size:0.85rem; color: var(--danger); border-color: var(--danger);" title="Desfazer Baixa (Volta para Pendente)">❌ Cancelar Acerto</button></td></tr>`;
             }).join('');
         }
 
@@ -842,7 +846,7 @@
                 if(v) {
                     if(!v.pagamento.includes('Acertado')) {
                         totalSoma += v.total;
-                        listaHtml += `<li style="padding: 8px 5px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; font-size: 0.9rem;"><span><b>#${v.id}</b> - ${v.cliente}</span><b>R$ ${v.total.toFixed(2)}</b></li>`;
+                        listaHtml += `<li style="padding: 8px 5px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; font-size: 0.9rem;"><span><b>#${v.id}</b> - ${v.cliente}</span><b>R$ ${formatCurrency(v.total)}</b></li>`;
                     } else { jaPagas++; }
                 }
             });
@@ -851,7 +855,7 @@
             if(totalSoma === 0 && jaPagas > 0) return alert("As contas selecionadas já estão pagas! Selecione apenas contas 'A Vencer' ou 'Vencidas'.");
 
             document.getElementById('lista-baixa').innerHTML = listaHtml;
-            document.getElementById('total-baixa-txt').innerText = `R$ ${totalSoma.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+            document.getElementById('total-baixa-txt').innerText = `R$ ${formatCurrency(totalSoma)}`;
             document.getElementById('modal-baixa').style.display = 'flex';
         }
 
@@ -932,9 +936,9 @@
             let total = 0;
             contas.forEach(v => {
                 total += v.total; const isPago = v.pagamento.includes('Acertado'); const isVencido = !isPago && v.vencimento < hoje; let statusTxt = isPago ? 'PAGO' : (isVencido ? 'VENCIDO' : 'A VENCER');
-                html += `<tr style="border-bottom: 1px solid #ccc;"><td style="padding: 10px;">#${v.id}</td><td style="padding: 10px;">${v.cliente}</td><td style="padding: 10px;">${v.vencimento.split('-').reverse().join('/')}</td><td style="padding: 10px;">${statusTxt}</td><td style="padding: 10px; text-align: right;">${v.total.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td></tr>`;
+                html += `<tr style="border-bottom: 1px solid #ccc;"><td style="padding: 10px;">#${v.id}</td><td style="padding: 10px;">${v.cliente}</td><td style="padding: 10px;">${v.vencimento.split('-').reverse().join('/')}</td><td style="padding: 10px;">${statusTxt}</td><td style="padding: 10px; text-align: right;">${formatCurrency(v.total)}</td></tr>`;
             });
-            html += `</tbody></table><div style="margin-top: 20px; text-align: right; font-size: 1.2rem; font-family: sans-serif;"><b>Total Listado: R$ ${total.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</b></div>`;
+            html += `</tbody></table><div style="margin-top: 20px; text-align: right; font-size: 1.2rem; font-family: sans-serif;"><b>Total Listado: R$ ${formatCurrency(total)}</b></div>`;
             document.getElementById('receipt-print').style.width = '100%'; document.getElementById('receipt-print').innerHTML = html; window.print();
             setTimeout(() => { document.getElementById('receipt-print').style.width = '80mm'; }, 500);
         }
@@ -987,13 +991,13 @@
             const tbody = document.getElementById('cart-table-body'); const tabelaContainer = document.getElementById('tabela-carrinho');
             if(carrinhoAtual.length === 0) { tabelaContainer.style.display = 'none'; } else {
                 tabelaContainer.style.display = 'table';
-                tbody.innerHTML = carrinhoAtual.map((item, i) => `<tr><td><b>${item.prodId || '-'}</b></td><td>${item.nome}</td><td>${item.qtd}</td><td>R$ ${item.unit.toFixed(2)}</td><td>R$ ${item.totalItem.toFixed(2)}</td><td style="text-align: center;"><button type="button" onclick="removerDoCarrinho(${i})" style="color:var(--danger); background:none; border:none; cursor:pointer; font-weight:bold; font-size:1rem;" title="Remover">X</button></td></tr>`).join('');
+                tbody.innerHTML = carrinhoAtual.map((item, i) => `<tr><td><b>${item.prodId || '-'}</b></td><td>${item.nome}</td><td>${item.qtd}</td><td>R$ ${formatCurrency(item.unit)}</td><td>R$ ${formatCurrency(item.totalItem)}</td><td style="text-align: center;"><button type="button" onclick="removerDoCarrinho(${i})" style="color:var(--danger); background:none; border:none; cursor:pointer; font-weight:bold; font-size:1rem;" title="Remover">X</button></td></tr>`).join('');
             }
             atualizarTotalTela();
         }
         function atualizarTotalTela() { 
             const somaCarrinho = carrinhoAtual.reduce((acc, item) => acc + item.totalItem, 0); const acres = parseFloat(document.getElementById('v-acres').value) || 0; const desc = parseFloat(document.getElementById('v-desc').value) || 0;
-            const totalGeral = somaCarrinho + acres - desc; document.getElementById('v-total-txt').innerText = totalGeral.toFixed(2); return totalGeral; 
+            const totalGeral = somaCarrinho + acres - desc; document.getElementById('v-total-txt').innerText = formatCurrency(totalGeral); return totalGeral; 
         }
 
         function openSaleModal() { 
@@ -1114,7 +1118,7 @@
             document.getElementById('v-prod-input').addEventListener('keydown', (e) => {
                 if(e.key === 'Enter') { 
                     e.preventDefault(); 
-                    autoFillProduct(); // Garante o preenchimento antes de pular de campo
+                    autoFillProduct(); 
                     document.getElementById('v-qtd').focus(); 
                 }
             });
